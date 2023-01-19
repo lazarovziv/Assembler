@@ -38,9 +38,8 @@ char* get_value(hashTable* table, char* key) {
     return 0; /* retrieval of value was unsuccessful */
 }
 
-int insert(hashTable* table, char* key, char* value) {
+void insert(hashTable* table, char* key, char* value) {
     int idx, keyLength, valueLength;
-    if (get_value(table, key) != 0) return 0; /* TODO: raise error? */
     idx = calculate_hash(key, table->size);
     table->items[idx] = (hashTableItem*) malloc(sizeof(hashTableItem*));
     /* TODO: if memory allocation was successful */
@@ -53,5 +52,9 @@ int insert(hashTable* table, char* key, char* value) {
 
     memcpy(table->items[idx]->key, key, keyLength);
     memcpy(table->items[idx]->value, value, valueLength);
-    return 1; /* insertion was successful */
+}
+
+int contains_key(hashTable* table, char* key) {
+    int idx = calculate_hash(key, table->size);
+    return table->items[idx] != 0;
 }
