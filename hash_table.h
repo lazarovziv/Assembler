@@ -16,4 +16,5 @@ typedef struct hashTable {
 int calculate_hash(char *input, int size);
 int init_hash_table(hashTable* table, int size);
 char* get_value(hashTable* table, char* key);
-int insert(hashTable* table, char* key, char* value);
+void insert(hashTable* table, char* key, char* value);
+int contains_key(hashTable* table, char* key);
