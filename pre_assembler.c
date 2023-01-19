@@ -6,7 +6,7 @@
 #define MAX_WORD_LENGTH 81
 #define HASH_TABLE_SIZE 10000
 #define READ_MODE "r"
-
+/* hey */
 int main(int argc, char *argv[]) {
     enum macroState {
         NOT_IN_MACRO, IN_MACRO_BODY, IN_MACRO_NAME, END_MACRO
