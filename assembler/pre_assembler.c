@@ -6,50 +6,51 @@
 #define MAX_WORD_LENGTH 81
 #define HASH_TABLE_SIZE 10000
 #define READ_MODE "r"
-/* hey */
-int main(int argc, char *argv[]) {
 
-    enum macroState {
-        NOT_IN_MACRO, IN_MACRO_BODY, IN_MACRO_NAME, END_MACRO
-    };
+enum macroState {
+    NOT_IN_MACRO, IN_MACRO_BODY, IN_MACRO_NAME, END_MACRO
+};
+
+int main(int argc, char *argv[]) {
     int numOfFiles = argc - 1;
-    FILE *files[numOfFiles];
-    FILE *file;
+    FILE** files = (FILE**) malloc(sizeof(FILE*) * (numOfFiles));
     hashTable *table;
     char *currentFileName;
     int currentFileNameLength;
-    int i, j, macroIdx, tempIdx;
-    char *tempString;
+    int i, j;
     const char filePostfix[] = ".as";
     char *word;
     int wordLength = 0;
     const char macroKeyword[] = "mcr";
-    const char endMacroKeyword[] = "endmcr\n";
+    const char endMacroKeyword[] = "endmcr";
     char *macroName;
     char *macroBody;
-    int currentMacroBodyIdx = 0;
-    int macroNameLen = 0;
+    char *token;
+    int currentMacroBodyLength = 0;
+    int insertReturnCode = 0;
 
     if (argc == 1) return 1;
 
     for (i = 1; i < argc; i++) {
-        printf("MADE IT HERE\n");
         currentFileNameLength = strlen(argv[i]);
-        currentFileName = (char *) malloc(sizeof(char) * (currentFileNameLength + 4));
+        currentFileName = (char *) malloc(sizeof(char) * (currentFileNameLength + 4)); /* adding 4 for .as postfix */
 
         strcpy(currentFileName, argv[i]);
         /* adding ".as" postfix */
-        strcpy(&currentFileName[currentFileNameLength], filePostfix);
+        strcat(currentFileName, filePostfix);
 
         printf("File name: %s\n\n", currentFileName);
-        if ((file = fopen(currentFileName, READ_MODE)) == NULL) {
+        if ((files[i-1] = fopen(currentFileName, READ_MODE)) == NULL) {
             fprintf(stderr, "Compilation error: bluh bluh bluh\n");
             free(currentFileName);
             /* free all opened files in case one doesn't exist */
             for (j = 0; j < i; j++) fclose(files[j]);
+            free(files);
             return 1;
         }
+        /* TODO: create new file with macros deployed */
 
+        /* finished deploying macros on this file */
         free(currentFileName);
     }
 
@@ -64,76 +65,79 @@ int main(int argc, char *argv[]) {
     }
     for (i = 0; i < numOfFiles; i++) {
         enum macroState macroStatus = NOT_IN_MACRO;
-        while (fgets(word, MAX_WORD_LENGTH, file) != NULL) {
+        while (fgets(word, MAX_WORD_LENGTH, files[i]) != NULL) {
             j = 0;
             while (isspace(word[j]))
                 j++;
             wordLength = strlen(&word[j]);
+            /* ignoring \n character at the end */
+            word[wordLength+j-1] = '\0';
 
             switch (macroStatus) {
-                case NOT_IN_MACRO:
-
-                    /* finding next space in word after first space */
-                    for (macroIdx = j; !isspace(word[macroIdx]); macroIdx++);
-                    /* defining tempString to store substring from first to second space */
-                    tempString = (char *) malloc(sizeof(char) * (macroIdx - j + 1));
-                    /* setting characters in it */
-                    for (tempIdx = j; tempIdx < macroIdx; tempIdx++) {
-                        tempString[tempIdx - j] = word[tempIdx];
-                    }
-                    macroIdx++;
-                    /* if it's mcr, starting a macro definition */
-                    if (strcmp(tempString, macroKeyword) == 0) {
-                        word[strlen(word) - 1] = '\0';
-                        macroStatus = IN_MACRO_BODY;
-                        /* skip whitespaces between 'mcr' and the macro name */
-                        while (isspace(word[macroIdx]))
-                            macroIdx++;
-                        /* count the length of the macro name */
-                        for (j = macroIdx; j < wordLength; j++) {
-                            macroNameLen++;
+                case NOT_IN_MACRO: {
+                    /* traversing words in word */
+                    token = strtok(word, " \t");
+                    while (token != NULL) {
+                        if (macroStatus == IN_MACRO_NAME) {
+                            macroName = (char*) malloc(sizeof(char) * strlen(token));
+                            strcpy(macroName, token);
+                            /* found "mcr" keyword */
+                        } else if (strcmp(token, macroKeyword) == 0) {
+                            macroStatus = IN_MACRO_NAME;
                         }
-                        /* set macroName */
-                        macroName = (char *) malloc(sizeof(char) * macroNameLen);
-                        memcpy(macroName, &word[macroIdx], macroNameLen);
-                        free(tempString);
+                        token = strtok(NULL, " \t");
                     }
-                    continue;
+                    macroStatus = IN_MACRO_BODY;
+                    break;
+                }
 
-
-
-                case END_MACRO:
-
-
+                case END_MACRO: {
                     macroStatus = NOT_IN_MACRO;
-                    currentMacroBodyIdx = 0;
-                    /* insert macroBody into macroName key */
-                    if (contains_key(table,macroName))
-                        printf("Macro %s already exists!!\n\n",
-                               macroName); /* TODO: handle error of redefinition of macro / collisions */
-                   else {
-                       insert(table,macroName,macroBody);
-                        printf("table item key (%s) hash:\n%d\ntable item value:\n%s\n\n", macroName,
-                               calculate_hash(macroName, table->size), get_value(table, macroName));
+                    currentMacroBodyLength = 0;
+                    /* trying to insert macroBody into macroName key */
+                    insertReturnCode = insert(table, macroName, macroBody);
+
+                    if (insertReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
+                        /* TODO: raise error of multiple macros with same name */
+                        printf(MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
+                        printf("Macro %s already exists!!\nChanging value...\n", macroName);
+                        break;
                     }
+
+                    printf("table item key (%s) hash:\n%d\ntable item value:\n%s\n\n", macroName,
+                           calculate_hash(macroName, table->size), get_value(table, macroName));
+
+                    /* deallocating memory for other macro names and bodies */
                     free(macroName);
                     free(macroBody);
-                    continue;
-
-                    /* reading the macro body and adding it to the item with the "macroName" key in the hash table */
-                case IN_MACRO_BODY:
-                    if (currentMacroBodyIdx == 0) {
+                    break;
+                }
+                /* reading the macro body and adding it to the item with the "macroName" key in the hash table */
+                case IN_MACRO_BODY: {
+                    if (currentMacroBodyLength == 0) {
                         macroBody = (char *) malloc(sizeof(char) * (wordLength + 1));
-                        currentMacroBodyIdx += wordLength;
+                        currentMacroBodyLength += wordLength + 1;
+                        /* adding \n character as macro body should consist of several (or just 1) lines */
+                        word[wordLength+j-1] = '\n';
                         strcpy(macroBody, &word[j]);
-                    } else if(strcmp(word,endMacroKeyword) != 0) {
-                        currentMacroBodyIdx += wordLength;
-                        macroBody = (char *) realloc(macroBody, sizeof(char) * (currentMacroBodyIdx + 1));
+                    } else {
+                        if (strcmp(&word[j], endMacroKeyword) == 0) {
+                            macroStatus = END_MACRO;
+                            break;
+                        }
+                        currentMacroBodyLength += wordLength;
+                        macroBody = (char*) realloc(macroBody, sizeof(char) * (currentMacroBodyLength + 1));
+                        /* adding \n character as "deleted" it after skipped whitespaces of sentence */
+                        word[wordLength+j-1] = '\n';
                         strcat(macroBody, &word[j]);
                     }
-                    else
-                        macroStatus = END_MACRO;
-                    continue;
+                    break;
+                }
+
+                /* default case should be IN_MACRO_NAME which is handled in NOT_IN_MACRO case while loop */
+                default: {
+                    break;
+                }
             }
         }
     }
