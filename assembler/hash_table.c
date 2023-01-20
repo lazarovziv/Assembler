@@ -10,9 +10,8 @@ int calculate_hash(char *input, int size) {
     long powerPrime = 1;
     int i;
     for (i = 0; input[i] != '\0'; i++) {
-        /* TODO: multiply by (input[i]-97+1) or keep it this way? */
-        /* TODO: define a numeric value for each "legal" possible character to use in a label?
-         * i.e: '0'=1, '1'=2,..., '9'=10, 'a'=11, 'b'=12,...,'z'=36, 'A'=37, 'B'=38,...,'Z'=62 */
+        /* setting each possible character a code for hashing function:
+         * '0'=1, '1'=2,..., '9'=10, 'a'=11, 'b'=12,...,'z'=36, 'A'=37, 'B'=38,...,'Z'=62 */
         if (islower(input[i])) sum = (sum + powerPrime * (input[i]-86)) % HASH_MOD;
         else if (isupper(input[i])) sum = (sum + powerPrime * (input[i]-28)) % HASH_MOD;
         else if (isdigit(input[i])) sum = (sum + powerPrime * (input[i]-47)) % HASH_MOD;
@@ -33,16 +32,22 @@ int init_hash_table(hashTable* table, int size) {
 }
 
 char* get_value(hashTable* table, char* key) {
-    int idx = calculate_hash(key, table->size);
-    if (table->items[idx] != 0) return table->items[idx]->value;
-    return 0; /* retrieval of value was unsuccessful */
+    int idx;
+    if (!contains_key(table, key)) return NULL; /* retrieval of value was unsuccessful */
+    idx = calculate_hash(key, table->size);
+    return table->items[idx]->value;
 }
 
-void insert(hashTable* table, char* key, char* value) {
+int insert(hashTable* table, char* key, char* value) {
     int idx, keyLength, valueLength;
+    /* before calculating hash, checking if key exists */
+    if (contains_key(table, key)) return HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE;
+
     idx = calculate_hash(key, table->size);
     table->items[idx] = (hashTableItem*) malloc(sizeof(hashTableItem*));
-    /* TODO: if memory allocation was successful */
+
+    /* if memory allocation was unsuccessful */
+    if (table->items[idx] == NULL) return MEMORY_NOT_ALLOCATED_ERROR_CODE;
 
     /* setting key and value for hash table item */
     keyLength = strlen(key);
@@ -52,9 +57,35 @@ void insert(hashTable* table, char* key, char* value) {
 
     memcpy(table->items[idx]->key, key, keyLength);
     memcpy(table->items[idx]->value, value, valueLength);
+
+    /* everything went fine */
+    return 1;
 }
 
 int contains_key(hashTable* table, char* key) {
     int idx = calculate_hash(key, table->size);
     return table->items[idx] != 0;
+}
+
+int change_value(hashTable* table, char* key, char* value) {
+    int idx, valueLength, itemValueLength;
+    /* can't change value which isn't in table */
+    if (!contains_key(table, key)) return HASH_TABLE_KEY_DOESNT_EXIST_ERROR_CODE;
+
+    idx = calculate_hash(key, table->size);
+    itemValueLength = strlen(table->items[idx]->value);
+    valueLength = strlen(value);
+
+    /* if value's length is longer than item's length */
+    if (valueLength > itemValueLength) {
+        table->items[idx]->value = (char*) realloc(table->items[idx]->value, sizeof(char) * valueLength);
+        /* filling new memory with NULL */
+        memset(table->items[idx]->value, 0, sizeof(char) * valueLength);
+    } else {
+        /* filling previous value with NULL */
+        memset(table->items[idx]->value, 0, sizeof(char) * itemValueLength);
+    }
+    /* copying value to item */
+    memcpy(table->items[idx]->value, value, sizeof(char) * valueLength);
+    return 1;
 }
