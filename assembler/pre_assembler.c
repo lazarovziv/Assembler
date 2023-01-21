@@ -25,11 +25,12 @@ int main(int argc, char *argv[]) {
     char *currentFileName;
     int currentFileNameLength;
 
-    int i, j;
+    int i, j, k, cutIdx;
     const char filePostfix[] = ".as";
     const char fileWritePostfix[] = "_w.as";
     /* using for reading from files */
     char *word;
+    char *cutWord;
     int wordLength = 0;
     const char macroKeyword[] = "mcr";
     const char endMacroKeyword[] = "endmcr";
@@ -124,9 +125,6 @@ int main(int argc, char *argv[]) {
                         break;
                     }
 
-                    printf("table item key (%s) hash:\n%d\ntable item value:\n%s\n\n", macroName,
-                           calculate_hash(macroName, table->size), get_value(table, macroName));
-
                     /* deallocating memory for other macro names and bodies */
                     free(macroName);
                     free(macroBody);
@@ -170,20 +168,36 @@ int main(int argc, char *argv[]) {
             free(writeFiles);
             return 1;
         }
+
+        /* going back to start of readFile to reiterate it for writing */
         rewind(readFiles[i]);
+
         /* traversing file again for deploying macros */
         while (fgets(word, MAX_WORD_LENGTH, readFiles[i]) != NULL) {
             j = 0;
+            k = strlen(word);
             while (isspace(word[j])) j++;
-            wordLength = strlen(&word[j]);
-            printf("Writing: \nword: %s\nlength: %d\n", &word[j], wordLength);
+
+            /* if entire sentence is whitespaces, user must've spaced his written code */
+            if (j == k) {
+                continue;
+            }
+            /* cutting whitespaces from the end */
+            while (isspace(word[k])) k--;
+            cutWord = (char*) malloc(sizeof(char) * (k-j+1));
+            for (cutIdx = j; cutIdx < k; cutIdx++) cutWord[cutIdx-j] = word[cutIdx];
 
             /* declaration of a macro */
-            if (contains_key(table, &word[j])) {
+            if (contains_key(table, cutWord)) {
                 /* setting value of key macroName */
-                fprintf(writeFiles[i], "%s", get_value(table, &word[j]));
+                fprintf(writeFiles[i], "%s", get_value(table, cutWord));
                 /* setting rest of file "as is" */
-            } else fprintf(writeFiles[i], "%s", word);
+            } else {
+                /* assuming macro declaration is a saved keyword so declaring it is a sentence of its own */
+                if (strstr(cutWord, macroKeyword) || strstr(cutWord, endMacroKeyword)) {
+                    continue;
+                } else fprintf(writeFiles[i], "%s", cutWord);
+            }
         }
     }
     return 0;
