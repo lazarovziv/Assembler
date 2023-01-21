@@ -13,7 +13,7 @@ typedef struct hashTable {
     int size;
 } hashTable;
 
-int calculate_hash(char *input, int size);
+unsigned int calculate_hash(char *input, int size);
 int init_hash_table(hashTable* table, int size);
 char* get_value(hashTable* table, char* key);
 int insert(hashTable* table, char* key, char* value);

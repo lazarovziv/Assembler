@@ -1,23 +1,28 @@
 #include "hash_table.h"
 #include <string.h>
 
+#define FIRST_PRIME 54059 /* a prime */
+#define SECOND_PRIME 76963 /* another prime */
+#define THIRD_PRIME 86969 /* yet another prime */
+#define START_NUM 37 /* also prime */
+
 const int PRIME_FOR_HASH = 37;
-const long HASH_MOD = 1e9+7;
+const int HASH_MOD = 1e9+7;
 
 /* idea for a hash function */
-int calculate_hash(char *input, int size) {
-    int sum = 0;
-    long powerPrime = 1;
+unsigned int calculate_hash(char *input, int size) {
+    unsigned int sum = START_NUM;
+    /* long powerPrime = 1; */
     int i;
     for (i = 0; input[i] != '\0'; i++) {
         /* setting each possible character a code for hashing function:
          * '0'=1, '1'=2,..., '9'=10, 'a'=11, 'b'=12,...,'z'=36, 'A'=37, 'B'=38,...,'Z'=62 */
-        if (islower(input[i])) sum = (sum + powerPrime * (input[i]-86)) % HASH_MOD;
-        else if (isupper(input[i])) sum = (sum + powerPrime * (input[i]-28)) % HASH_MOD;
-        else if (isdigit(input[i])) sum = (sum + powerPrime * (input[i]-47)) % HASH_MOD;
-        powerPrime = (powerPrime * PRIME_FOR_HASH) % HASH_MOD;
+        if (islower(input[i])) sum = (sum * FIRST_PRIME) ^ ((input[i]-86) * SECOND_PRIME);  /* sum = (sum + powerPrime * (input[i]-86)) % HASH_MOD; */
+        else if (isupper(input[i])) sum = (sum * FIRST_PRIME) ^ ((input[i]-28) * SECOND_PRIME); /* sum = (sum + powerPrime * (input[i]-28)) % HASH_MOD; */
+        else if (isdigit(input[i])) sum = (sum * FIRST_PRIME) ^ ((input[i]-47) * SECOND_PRIME); /* sum = (sum + powerPrime * (input[i]-47)) % HASH_MOD; */
+        /* powerPrime = (powerPrime * PRIME_FOR_HASH) % HASH_MOD; */
     }
-    return (sum % HASH_MOD) % size;
+    return sum % size; /* (sum % HASH_MOD) % size; */
 }
 
 int init_hash_table(hashTable* table, int size) {
