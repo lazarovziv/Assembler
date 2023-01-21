@@ -12,6 +12,8 @@ enum macroState {
     NOT_IN_MACRO, IN_MACRO_BODY, IN_MACRO_NAME, END_MACRO
 };
 
+int is_prime(int n);
+
 int main(int argc, char *argv[]) {
     int numOfFiles = argc - 1;
     /* files received from program arguments */
@@ -171,7 +173,7 @@ int main(int argc, char *argv[]) {
 
         /* going back to start of readFile to reiterate it for writing */
         rewind(readFiles[i]);
-
+        cutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
         /* traversing file again for deploying macros */
         while (fgets(word, MAX_WORD_LENGTH, readFiles[i]) != NULL) {
             j = 0;
@@ -182,11 +184,11 @@ int main(int argc, char *argv[]) {
             if (j == k) {
                 continue;
             }
+
             /* cutting whitespaces from the end */
             while (isspace(word[k])) k--;
-            cutWord = (char*) malloc(sizeof(char) * (k-j+1));
-            for (cutIdx = j; cutIdx < k; cutIdx++) cutWord[cutIdx-j] = word[cutIdx];
 
+            for (cutIdx = j; cutIdx < k; cutIdx++) cutWord[cutIdx-j] = word[cutIdx];
             /* declaration of a macro */
             if (contains_key(table, cutWord)) {
                 /* setting value of key macroName */
@@ -195,12 +197,17 @@ int main(int argc, char *argv[]) {
             } else {
                 /* assuming macro declaration is a saved keyword so declaring it is a sentence of its own */
                 if (strstr(cutWord, macroKeyword) || strstr(cutWord, endMacroKeyword)) {
+                    memset(cutWord, 0, MAX_WORD_LENGTH);
                     continue;
                 } else fprintf(writeFiles[i], "%s", cutWord);
             }
+            memset(cutWord, 0, MAX_WORD_LENGTH);
         }
+        free(cutWord);
     }
     return 0;
+
+    /* 2,147,483,647 */
 }
 
 
