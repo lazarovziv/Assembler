@@ -5,17 +5,22 @@
 
 #define MAX_WORD_LENGTH 81
 #define HASH_TABLE_SIZE 10000
+
 #define READ_MODE "r"
 #define WRITE_MODE "w"
+#define MACRO_KEYWORD "mcr"
+#define END_MACRO_KEYWORD "endmcr"
 
 enum macroState {
     NOT_IN_MACRO, IN_MACRO_BODY, IN_MACRO_NAME, END_MACRO
 };
 
-int is_prime(int n);
+void read_macros_from_file(FILE *file, hashTable *table);
+void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table);
 
 int main(int argc, char *argv[]) {
     int numOfFiles = argc - 1;
+    int i, j;
     /* files received from program arguments */
     FILE** readFiles = (FILE**) malloc(sizeof(FILE*) * numOfFiles);
     /* files to write and deploy the macros read from readFiles */
@@ -27,24 +32,8 @@ int main(int argc, char *argv[]) {
     char *currentFileName;
     int currentFileNameLength;
 
-    int i, j, k, cutIdx;
     const char filePostfix[] = ".as";
     const char fileWritePostfix[] = "_w.as";
-    /* using for reading from files */
-    char *word;
-    char *cutWord;
-    int wordLength = 0;
-    const char macroKeyword[] = "mcr";
-    const char endMacroKeyword[] = "endmcr";
-    /* storing it for key, value pair in hash table */
-    char *macroName;
-    char *macroBody;
-    /* token used for strtok call in reading from file loop */
-    char *token;
-
-    int currentMacroBodyLength = 0;
-    /* indication whether inserting to hash table was successful or not */
-    int insertReturnCode = 0;
 
     /* no files specified */
     if (argc == 1) return 1;
@@ -64,6 +53,8 @@ int main(int argc, char *argv[]) {
         strcat(currentFileNameWrite, fileWritePostfix);
 
         printf("File name: %s\n\n", currentFileName);
+
+        /* trying to open file to read macros from */
         if ((readFiles[i-1] = fopen(currentFileName, READ_MODE)) == NULL) {
             fprintf(stderr, "Error trying to open file %s\n", currentFileName);
             free(currentFileName);
@@ -72,12 +63,19 @@ int main(int argc, char *argv[]) {
             free(readFiles);
             return 1;
         }
+        /* trying to open file to write to with all macros */
+        if ((writeFiles[i-1] = fopen(currentFileNameWrite, WRITE_MODE)) == NULL) {
+            fprintf(stderr, "Unable to write to file %s\n", currentFileNameWrite);
+            free(currentFileNameWrite);
+            /* free all opened files in case one doesn't exist */
+            for (j = 0; j < i; j++) fclose(writeFiles[j]);
+            free(writeFiles);
+            return 1;
+        }
         /* finished deploying macros on this file */
         free(currentFileName);
     }
 
-    /* initializing current word to read to from files */
-    word = (char *) malloc(sizeof(char) * MAX_WORD_LENGTH);
     /* initializing table in memory */
     table = (hashTable *) malloc(sizeof(hashTable));
 
@@ -86,128 +84,181 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     for (i = 0; i < numOfFiles; i++) {
-        enum macroState macroStatus = NOT_IN_MACRO;
-        /* traversing file for finding macros */
-        while (fgets(word, MAX_WORD_LENGTH, readFiles[i]) != NULL) {
-            j = 0;
-            while (isspace(word[j]))
-                j++;
-            wordLength = strlen(&word[j]);
-            /* ignoring \n character at the end */
-            word[wordLength+j-1] = '\0';
-
-            switch (macroStatus) {
-                case NOT_IN_MACRO: {
-                    /* traversing words in word */
-                    token = strtok(word, " \t");
-                    while (token != NULL) {
-                        if (macroStatus == IN_MACRO_NAME) {
-                            macroName = (char*) malloc(sizeof(char) * strlen(token));
-                            strcpy(macroName, token);
-                            /* found "mcr" keyword */
-                        } else if (strcmp(token, macroKeyword) == 0) {
-                            macroStatus = IN_MACRO_NAME;
-                        }
-                        token = strtok(NULL, " \t");
-                    }
-                    macroStatus = IN_MACRO_BODY;
-                    break;
-                }
-
-                case END_MACRO: {
-                    macroStatus = NOT_IN_MACRO;
-                    currentMacroBodyLength = 0;
-                    /* trying to insert macroBody into macroName key */
-                    insertReturnCode = insert(table, macroName, macroBody);
-
-                    if (insertReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
-                        /* TODO: raise error of multiple macros with same name */
-                        printf(MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
-                        printf("Macro %s already exists!!\nChanging value...\n", macroName);
-                        break;
-                    }
-
-                    /* deallocating memory for other macro names and bodies */
-                    free(macroName);
-                    free(macroBody);
-                    break;
-                }
-                /* reading the macro body and adding it to the item with the "macroName" key in the hash table */
-                case IN_MACRO_BODY: {
-                    if (currentMacroBodyLength == 0) {
-                        macroBody = (char *) malloc(sizeof(char) * (wordLength + 1));
-                        currentMacroBodyLength += wordLength + 1;
-                        /* adding \n character as macro body should consist of several (or just 1) lines */
-                        word[wordLength+j-1] = '\n';
-                        strcpy(macroBody, &word[j]);
-                    } else {
-                        if (strcmp(&word[j], endMacroKeyword) == 0) {
-                            macroStatus = END_MACRO;
-                            break;
-                        }
-                        currentMacroBodyLength += wordLength;
-                        macroBody = (char*) realloc(macroBody, sizeof(char) * (currentMacroBodyLength + 1));
-                        /* adding \n character as "deleted" it after skipped whitespaces of sentence */
-                        word[wordLength+j-1] = '\n';
-                        strcat(macroBody, &word[j]);
-                    }
-                    break;
-                }
-
-                /* default case should be IN_MACRO_NAME which is handled in NOT_IN_MACRO case while loop */
-                default: {
-                    break;
-                }
-            }
-        }
-
-        /* trying to open file to write to with all macros */
-        if ((writeFiles[i] = fopen(currentFileNameWrite, WRITE_MODE)) == NULL) {
-            fprintf(stderr, "Unable to write to file %s\n", currentFileNameWrite);
-            free(currentFileNameWrite);
-            /* free all opened files in case one doesn't exist */
-            for (j = 0; j < i; j++) fclose(writeFiles[j]);
-            free(writeFiles);
-            return 1;
-        }
-
+        read_macros_from_file(readFiles[i], table);
         /* going back to start of readFile to reiterate it for writing */
         rewind(readFiles[i]);
-        cutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
-        /* traversing file again for deploying macros */
-        while (fgets(word, MAX_WORD_LENGTH, readFiles[i]) != NULL) {
-            j = 0;
-            k = strlen(word);
-            while (isspace(word[j])) j++;
+        write_macros_to_file(readFiles[i], writeFiles[i], table);
+    }
+    return 0;
+}
 
-            /* if entire sentence is whitespaces, user must've spaced his written code */
-            if (j == k) {
-                continue;
+void read_macros_from_file(FILE *file, hashTable *table) {
+    int j, currentMacroBodyLength = 0, insertReturnCode, wordLength;
+    int atFirstMacro = 1, atFirstMacroBody = 1;
+    int macroLength = 0, tokenLength;
+    char *token;
+    char *macroName, *macroBody;
+    char *word = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
+
+    enum macroState macroStatus = NOT_IN_MACRO;
+    /* traversing file for finding macros */
+    while (fgets(word, MAX_WORD_LENGTH, file) != NULL) {
+        j = 0;
+        while (isspace(word[j]))
+            j++;
+        wordLength = strlen(&word[j]);
+        /* ignoring \n character at the end */
+        word[wordLength+j-1] = '\0';
+
+        switch (macroStatus) {
+            case NOT_IN_MACRO: {
+                /* traversing words in word */
+                token = strtok(word, " \t");
+                while (token != NULL) {
+                    tokenLength = strlen(token);
+                    if (macroStatus == IN_MACRO_NAME) {
+                        /* allocating memory for the first time */
+                        if (atFirstMacro) {
+                            macroName = (char*) malloc(sizeof(char) * tokenLength);
+                            macroLength = tokenLength;
+                            atFirstMacro = 0;
+                            /* reallocate memory if length of current macro name is longer */
+                        } else if (tokenLength > macroLength) {
+                            macroName = (char*) realloc(macroName, sizeof(char) * tokenLength);
+                            macroLength = tokenLength;
+                        }
+                        /* reset macroName */
+                        memset(macroName, 0, sizeof(char) * macroLength);
+                        /* set new value to macroName */
+                        strcpy(macroName, token);
+                        /* found "mcr" keyword */
+                    } else if (strcmp(token, MACRO_KEYWORD) == 0) {
+                        macroStatus = IN_MACRO_NAME;
+                    }
+                    token = strtok(NULL, " \t");
+                }
+                macroStatus = IN_MACRO_BODY;
+                break;
             }
 
-            /* cutting whitespaces from the end */
-            while (isspace(word[k])) k--;
+            case END_MACRO: {
+                macroStatus = NOT_IN_MACRO;
+                currentMacroBodyLength = 0;
+                /* trying to insert macroBody into macroName key */
+                insertReturnCode = insert(table, macroName, macroBody);
 
-            for (cutIdx = j; cutIdx < k; cutIdx++) cutWord[cutIdx-j] = word[cutIdx];
+                if (insertReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
+                    /* TODO: raise error of multiple macros with same name */
+                    printf(MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
+                    printf("Macro %s already exists!\n", macroName);
+                    break;
+                }
+                break;
+            }
+                /* reading the macro body and adding it to the item with the "macroName" key in the hash table */
+            case IN_MACRO_BODY: {
+                if (currentMacroBodyLength == 0) {
+                    if (atFirstMacroBody) {
+                        macroBody = (char *) malloc(sizeof(char) * (wordLength + 1));
+                        atFirstMacroBody = 0;
+                    }
+                    currentMacroBodyLength += wordLength + 1;
+                    /* adding \n character as macro body should consist of several (or just 1) lines */
+                    word[wordLength+j-1] = '\n';
+                    strcpy(macroBody, &word[j]);
+                } else {
+                    if (strcmp(&word[j], END_MACRO_KEYWORD) == 0) {
+                        macroStatus = END_MACRO;
+                        break;
+                    }
+                    currentMacroBodyLength += wordLength;
+                    macroBody = (char*) realloc(macroBody, sizeof(char) * (currentMacroBodyLength + 1));
+                    /* adding \n character as "deleted" it after skipped whitespaces of sentence */
+                    word[wordLength+j-1] = '\n';
+                    strcat(macroBody, &word[j]);
+                }
+                break;
+            }
+
+                /* default case should be IN_MACRO_NAME which is handled in NOT_IN_MACRO case while loop */
+            default: {
+                break;
+            }
+        }
+        memset(word, 0, MAX_WORD_LENGTH);
+    }
+    /* deallocating memory */
+    free(word);
+    free(macroName);
+    free(macroBody);
+}
+
+void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
+    int j, k, cutIdx;
+    char *cutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
+    char *word = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
+
+    /* keeping track of macro declarations for not writing declarations in deployed file (assuming macro declarations are valid, as instructed)  */
+    enum macroState macroStatus = NOT_IN_MACRO;
+
+    /* traversing file again for deploying macros */
+    while (fgets(word, MAX_WORD_LENGTH, readFile) != NULL) {
+        j = 0;
+        k = strlen(word);
+        while (isspace(word[j])) j++;
+
+        /* if entire sentence is whitespaces, user must've spaced his written code */
+        if (j == k) {
+            continue;
+        }
+        /* cutting whitespaces from the end */
+        while (isspace(word[k])) k--;
+
+        for (cutIdx = j; cutIdx < k; cutIdx++) cutWord[cutIdx-j] = word[cutIdx];
+
+        /* if inside macro body */
+        if (macroStatus == IN_MACRO_NAME) {
+            /* check if reached end of macro */
+            if (strstr(word, END_MACRO_KEYWORD)) {
+                /* setting to end macro for writing sentences which aren't macro declarations */
+                macroStatus = END_MACRO;
+            }
+            memset(cutWord, 0, MAX_WORD_LENGTH);
+            memset(word, 0, MAX_WORD_LENGTH);
+            continue;
+        }
+
+        /* if macro is declared here */
+        /* TODO: edge case - name of label/something else is ...mcr... i.e: my_mcr (use strtok?) */
+        if (strstr(cutWord, MACRO_KEYWORD)) {
+            macroStatus = IN_MACRO_NAME;
+
+            memset(cutWord, 0, MAX_WORD_LENGTH);
+            memset(word, 0, MAX_WORD_LENGTH);
+            continue;
+        }
+
+        /* writing lines which aren't macro declarations */
+        if (macroStatus == END_MACRO) {
             /* declaration of a macro */
             if (contains_key(table, cutWord)) {
                 /* setting value of key macroName */
-                fprintf(writeFiles[i], "%s", get_value(table, cutWord));
+                fprintf(writeFile, "%s", get_value(table, cutWord));
                 /* setting rest of file "as is" */
             } else {
                 /* assuming macro declaration is a saved keyword so declaring it is a sentence of its own */
-                if (strstr(cutWord, macroKeyword) || strstr(cutWord, endMacroKeyword)) {
+                if (strstr(cutWord, MACRO_KEYWORD) || strstr(cutWord, END_MACRO_KEYWORD)) {
                     memset(cutWord, 0, MAX_WORD_LENGTH);
                     continue;
-                } else fprintf(writeFiles[i], "%s", cutWord);
+                } else fprintf(writeFile, "%s", cutWord);
             }
-            memset(cutWord, 0, MAX_WORD_LENGTH);
         }
-        free(cutWord);
+        memset(cutWord, 0, MAX_WORD_LENGTH);
+        memset(word, 0, MAX_WORD_LENGTH);
     }
-    return 0;
 
-    /* 2,147,483,647 */
+    free(word);
+    free(cutWord);
 }
 
 
