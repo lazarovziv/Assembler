@@ -6,6 +6,7 @@
 #define MAX_WORD_LENGTH 81
 #define HASH_TABLE_SIZE 10000
 #define READ_MODE "r"
+#define WRITE_MODE "w"
 
 enum macroState {
     NOT_IN_MACRO, IN_MACRO_BODY, IN_MACRO_NAME, END_MACRO
@@ -13,43 +14,61 @@ enum macroState {
 
 int main(int argc, char *argv[]) {
     int numOfFiles = argc - 1;
-    FILE** files = (FILE**) malloc(sizeof(FILE*) * (numOfFiles));
+    /* files received from program arguments */
+    FILE** readFiles = (FILE**) malloc(sizeof(FILE*) * numOfFiles);
+    /* files to write and deploy the macros read from readFiles */
+    FILE** writeFiles = (FILE**) malloc(sizeof(FILE*) * numOfFiles);
+
     hashTable *table;
+
+    char *currentFileNameWrite;
     char *currentFileName;
     int currentFileNameLength;
+
     int i, j;
     const char filePostfix[] = ".as";
+    const char fileWritePostfix[] = "_w.as";
+    /* using for reading from files */
     char *word;
     int wordLength = 0;
     const char macroKeyword[] = "mcr";
     const char endMacroKeyword[] = "endmcr";
+    /* storing it for key, value pair in hash table */
     char *macroName;
     char *macroBody;
+    /* token used for strtok call in reading from file loop */
     char *token;
+
     int currentMacroBodyLength = 0;
+    /* indication whether inserting to hash table was successful or not */
     int insertReturnCode = 0;
 
+    /* no files specified */
     if (argc == 1) return 1;
 
+    /* storing all files in readFiles array */
     for (i = 1; i < argc; i++) {
         currentFileNameLength = strlen(argv[i]);
         currentFileName = (char *) malloc(sizeof(char) * (currentFileNameLength + 4)); /* adding 4 for .as postfix */
+        currentFileNameWrite = (char*) malloc(sizeof(char) * (currentFileNameLength + 6)); /* adding 6 as adding _w.as as postfix */
 
         strcpy(currentFileName, argv[i]);
         /* adding ".as" postfix */
         strcat(currentFileName, filePostfix);
 
+        strcpy(currentFileNameWrite, argv[i]);
+        /* adding "_w.as" postfix */
+        strcat(currentFileNameWrite, fileWritePostfix);
+
         printf("File name: %s\n\n", currentFileName);
-        if ((files[i-1] = fopen(currentFileName, READ_MODE)) == NULL) {
-            fprintf(stderr, "Compilation error: bluh bluh bluh\n");
+        if ((readFiles[i-1] = fopen(currentFileName, READ_MODE)) == NULL) {
+            fprintf(stderr, "Error trying to open file %s\n", currentFileName);
             free(currentFileName);
             /* free all opened files in case one doesn't exist */
-            for (j = 0; j < i; j++) fclose(files[j]);
-            free(files);
+            for (j = 0; j < i; j++) fclose(readFiles[j]);
+            free(readFiles);
             return 1;
         }
-        /* TODO: create new file with macros deployed */
-
         /* finished deploying macros on this file */
         free(currentFileName);
     }
@@ -65,7 +84,8 @@ int main(int argc, char *argv[]) {
     }
     for (i = 0; i < numOfFiles; i++) {
         enum macroState macroStatus = NOT_IN_MACRO;
-        while (fgets(word, MAX_WORD_LENGTH, files[i]) != NULL) {
+        /* traversing file for finding macros */
+        while (fgets(word, MAX_WORD_LENGTH, readFiles[i]) != NULL) {
             j = 0;
             while (isspace(word[j]))
                 j++;
@@ -139,6 +159,31 @@ int main(int argc, char *argv[]) {
                     break;
                 }
             }
+        }
+
+        /* trying to open file to write to with all macros */
+        if ((writeFiles[i] = fopen(currentFileNameWrite, WRITE_MODE)) == NULL) {
+            fprintf(stderr, "Unable to write to file %s\n", currentFileNameWrite);
+            free(currentFileNameWrite);
+            /* free all opened files in case one doesn't exist */
+            for (j = 0; j < i; j++) fclose(writeFiles[j]);
+            free(writeFiles);
+            return 1;
+        }
+        rewind(readFiles[i]);
+        /* traversing file again for deploying macros */
+        while (fgets(word, MAX_WORD_LENGTH, readFiles[i]) != NULL) {
+            j = 0;
+            while (isspace(word[j])) j++;
+            wordLength = strlen(&word[j]);
+            printf("Writing: \nword: %s\nlength: %d\n", &word[j], wordLength);
+
+            /* declaration of a macro */
+            if (contains_key(table, &word[j])) {
+                /* setting value of key macroName */
+                fprintf(writeFiles[i], "%s", get_value(table, &word[j]));
+                /* setting rest of file "as is" */
+            } else fprintf(writeFiles[i], "%s", word);
         }
     }
     return 0;
