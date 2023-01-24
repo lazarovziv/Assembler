@@ -12,7 +12,6 @@ const int HASH_MOD = 1e9+7;
 /* idea for a hash function */
 unsigned int calculate_hash(char *input, int size) {
     unsigned int sum = START_NUM;
-    /* long powerPrime = 1; */
     int i;
     for (i = 0; input[i] != '\0'; i++) {
         /* setting each possible character a code for hashing function:
@@ -20,9 +19,8 @@ unsigned int calculate_hash(char *input, int size) {
         if (islower(input[i])) sum = (sum * FIRST_PRIME) ^ ((input[i]-86) * SECOND_PRIME);  /* sum = (sum + powerPrime * (input[i]-86)) % HASH_MOD; */
         else if (isupper(input[i])) sum = (sum * FIRST_PRIME) ^ ((input[i]-28) * SECOND_PRIME); /* sum = (sum + powerPrime * (input[i]-28)) % HASH_MOD; */
         else if (isdigit(input[i])) sum = (sum * FIRST_PRIME) ^ ((input[i]-47) * SECOND_PRIME); /* sum = (sum + powerPrime * (input[i]-47)) % HASH_MOD; */
-        /* powerPrime = (powerPrime * PRIME_FOR_HASH) % HASH_MOD; */
     }
-    return sum % size; /* (sum % HASH_MOD) % size; */
+    return sum % size;
 }
 
 int init_hash_table(hashTable* table, int size) {
@@ -38,7 +36,10 @@ int init_hash_table(hashTable* table, int size) {
 
 char* get_value(hashTable* table, char* key) {
     int idx;
-    if (!contains_key(table, key)) return NULL; /* retrieval of value was unsuccessful */
+    if (!contains_key(table, key)) {
+        fprintf(stderr, HASH_TABLE_KEY_DOESNT_EXIST_ERROR_MESSAGE);
+        return NULL; /* retrieval of value was unsuccessful */
+    }
     idx = calculate_hash(key, table->size);
     return table->items[idx]->value;
 }
@@ -52,7 +53,10 @@ int insert(hashTable* table, char* key, char* value) {
     table->items[idx] = (hashTableItem*) malloc(sizeof(hashTableItem*));
 
     /* if memory allocation was unsuccessful */
-    if (table->items[idx] == NULL) return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+    if (table->items[idx] == NULL) {
+        fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+        return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+    }
 
     /* setting key and value for hash table item */
     keyLength = strlen(key);
@@ -75,7 +79,10 @@ int contains_key(hashTable* table, char* key) {
 int change_value(hashTable* table, char* key, char* value) {
     int idx, valueLength, itemValueLength;
     /* can't change value which isn't in table */
-    if (!contains_key(table, key)) return HASH_TABLE_KEY_DOESNT_EXIST_ERROR_CODE;
+    if (!contains_key(table, key)) {
+        fprintf(stderr, HASH_TABLE_KEY_DOESNT_EXIST_ERROR_MESSAGE);
+        return HASH_TABLE_KEY_DOESNT_EXIST_ERROR_CODE;
+    }
 
     idx = calculate_hash(key, table->size);
     itemValueLength = strlen(table->items[idx]->value);
