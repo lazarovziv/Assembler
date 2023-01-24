@@ -51,8 +51,6 @@ int main(int argc, char *argv[]) {
         /* adding "_w.as" postfix */
         strcat(currentFileNameWrite, fileWritePostfix);
 
-        printf("File name: %s\n\n", currentFileName);
-
         /* trying to open file to read macros from */
         if ((readFiles[i-1] = fopen(currentFileName, READ_MODE)) == NULL) {
             fprintf(stderr, "Error trying to open file %s\n", currentFileName);
@@ -75,7 +73,7 @@ int main(int argc, char *argv[]) {
         tables[i-1] = (hashTable*) malloc(sizeof(hashTable));
 
         if (!init_hash_table(tables[i-1], HASH_TABLE_SIZE)) {
-            printf("unsuccessful initialization of hash table.\n");
+            fprintf(stderr, "unsuccessful initialization of hash table.\n");
             return 1;
         }
 
@@ -161,7 +159,7 @@ void read_macros_from_file(FILE *file, hashTable *table) {
                 if (insertReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                     /* TODO: raise error of multiple macros with same name */
                     printf(MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
-                    printf("Macro %s already exists!\n", macroName);
+                    fprintf(stderr, "Macro %s already exists!\n", macroName);
                     break;
                 }
                 break;
