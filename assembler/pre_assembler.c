@@ -25,15 +25,14 @@ int main(int argc, char *argv[]) {
     FILE** readFiles = (FILE**) malloc(sizeof(FILE*) * numOfFiles);
     /* files to write and deploy the macros read from readFiles */
     FILE** writeFiles = (FILE**) malloc(sizeof(FILE*) * numOfFiles);
-
-    hashTable *table;
+    hashTable **tables = (hashTable**) malloc(sizeof(hashTable*) * numOfFiles);
 
     char *currentFileNameWrite;
     char *currentFileName;
     int currentFileNameLength;
 
     const char filePostfix[] = ".as";
-    const char fileWritePostfix[] = "_w.as";
+    const char fileWritePostfix[] = ".am";
 
     /* no files specified */
     if (argc == 1) return 1;
@@ -42,7 +41,7 @@ int main(int argc, char *argv[]) {
     for (i = 1; i < argc; i++) {
         currentFileNameLength = strlen(argv[i]);
         currentFileName = (char *) malloc(sizeof(char) * (currentFileNameLength + 4)); /* adding 4 for .as postfix */
-        currentFileNameWrite = (char*) malloc(sizeof(char) * (currentFileNameLength + 6)); /* adding 6 as adding _w.as as postfix */
+        currentFileNameWrite = (char*) malloc(sizeof(char) * (currentFileNameLength + 4)); /* adding 6 as adding .am postfix */
 
         strcpy(currentFileName, argv[i]);
         /* adding ".as" postfix */
@@ -72,23 +71,35 @@ int main(int argc, char *argv[]) {
             free(writeFiles);
             return 1;
         }
+        /* initializing table in memory for current file */
+        tables[i-1] = (hashTable*) malloc(sizeof(hashTable));
+
+        if (!init_hash_table(tables[i-1], HASH_TABLE_SIZE)) {
+            printf("unsuccessful initialization of hash table.\n");
+            return 1;
+        }
+
         /* finished deploying macros on this file */
         free(currentFileName);
-    }
-
-    /* initializing table in memory */
-    table = (hashTable *) malloc(sizeof(hashTable));
-
-    if (!init_hash_table(table, HASH_TABLE_SIZE)) {
-        printf("unsuccessful initialization of hash table.\n");
-        return 1;
+        free(currentFileNameWrite);
     }
     for (i = 0; i < numOfFiles; i++) {
-        read_macros_from_file(readFiles[i], table);
+        read_macros_from_file(readFiles[i], tables[i]);
         /* going back to start of readFile to reiterate it for writing */
         rewind(readFiles[i]);
-        write_macros_to_file(readFiles[i], writeFiles[i], table);
+        write_macros_to_file(readFiles[i], writeFiles[i], tables[i]);
     }
+
+    for (i = 0; i < numOfFiles; i++) {
+        fclose(readFiles[i]);
+        fclose(writeFiles[i]);
+
+        free(tables[i]);
+    }
+
+    free(readFiles);
+    free(writeFiles);
+    free(tables);
     return 0;
 }
 
