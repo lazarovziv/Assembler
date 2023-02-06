@@ -88,6 +88,7 @@ int main(int argc, char *argv[]) {
         write_macros_to_file(readFiles[i], writeFiles[i], tables[i]);
     }
 
+    /* freeing all file and hash tables separately */
     for (i = 0; i < numOfFiles; i++) {
         fclose(readFiles[i]);
         fclose(writeFiles[i]);
@@ -95,6 +96,7 @@ int main(int argc, char *argv[]) {
         free(tables[i]);
     }
 
+    /* freeing arrays */
     free(readFiles);
     free(writeFiles);
     free(tables);
@@ -239,7 +241,9 @@ void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
 
         /* if macro is declared here */
         /* TODO: edge case - name of label/something else is ...mcr... i.e: my_mcr (use strtok?) */
-        if (strstr(cutWord, MACRO_KEYWORD)) {
+        /* if contains space then it's a macro declaration? (seems to work) */
+        if (strstr(cutWord, MACRO_KEYWORD)
+        && strstr(cutWord, " ")) {
             macroStatus = IN_MACRO_NAME;
 
             memset(cutWord, 0, MAX_WORD_LENGTH);
