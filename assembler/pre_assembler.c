@@ -17,6 +17,7 @@ enum macroState {
 
 void read_macros_from_file(FILE *file, hashTable *table);
 void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table);
+void write_macros_to(FILE *readFile, FILE *writeFile, hashTable *table);
 
 int main(int argc, char *argv[]) {
     int numOfFiles = argc - 1;
@@ -207,67 +208,72 @@ void read_macros_from_file(FILE *file, hashTable *table) {
 void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
     int j, k, cutIdx;
     char *cutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
+    char *shortenedCutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
     char *word = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
 
-    /* keeping track of macro declarations for not writing declarations in deployed file (assuming macro declarations are valid, as instructed)  */
     enum macroState macroStatus = NOT_IN_MACRO;
 
-    /* traversing file again for deploying macros */
     while (fgets(word, MAX_WORD_LENGTH, readFile) != NULL) {
         j = 0;
         k = strlen(word);
         while (isspace(word[j])) j++;
+        if (j == k) continue;
 
-        /* if entire sentence is whitespaces, user must've spaced his written code */
-        if (j == k) {
-            continue;
-        }
-        /* cutting whitespaces from the end */
         while (isspace(word[k])) k--;
 
         for (cutIdx = j; cutIdx < k; cutIdx++) cutWord[cutIdx-j] = word[cutIdx];
 
-        /* if inside macro body */
-        if (macroStatus == IN_MACRO_NAME) {
-            /* check if reached end of macro */
-            if (strstr(word, END_MACRO_KEYWORD)) {
-                /* setting to end macro for writing sentences which aren't macro declarations */
-                macroStatus = END_MACRO;
+        if (strstr(cutWord, ";")) {
+            /* reset word and cutWord */
+            memset(cutWord, 0, MAX_WORD_LENGTH);
+            memset(word, 0, MAX_WORD_LENGTH);
+            memset(shortenedCutWord, 0, MAX_WORD_LENGTH);
+            continue;
+        }
+
+        /* if finished with macro deployment OR haven't found one yet */
+        if (macroStatus == NOT_IN_MACRO) {
+            /* check if macro is declared here */
+            if (strstr(cutWord, MACRO_KEYWORD) != NULL
+            && strstr(cutWord, " ") != NULL) {
+                macroStatus = IN_MACRO_BODY;
+                /* reset word and cutWord */
+                memset(cutWord, 0, MAX_WORD_LENGTH);
+                memset(word, 0, MAX_WORD_LENGTH);
+                memset(shortenedCutWord, 0, MAX_WORD_LENGTH);
+                continue;
             }
-            memset(cutWord, 0, MAX_WORD_LENGTH);
-            memset(word, 0, MAX_WORD_LENGTH);
-            continue;
-        }
 
-        /* if macro is declared here */
-        /* TODO: edge case - name of label/something else is ...mcr... i.e: my_mcr (use strtok?) */
-        /* if contains space then it's a macro declaration? (seems to work) */
-        if (strstr(cutWord, MACRO_KEYWORD)
-        && strstr(cutWord, " ")) {
-            macroStatus = IN_MACRO_NAME;
-
-            memset(cutWord, 0, MAX_WORD_LENGTH);
-            memset(word, 0, MAX_WORD_LENGTH);
-            continue;
-        }
-
-        /* writing lines which aren't macro declarations */
-        if (macroStatus == END_MACRO) {
-            /* declaration of a macro */
+            /* if macro should be deployed here */
             if (contains_key(table, cutWord)) {
                 /* setting value of key macroName */
                 fprintf(writeFile, "%s", get_value(table, cutWord));
-                /* setting rest of file "as is" */
-            } else {
-                /* assuming macro declaration is a saved keyword so declaring it is a sentence of its own */
-                if (strstr(cutWord, MACRO_KEYWORD) || strstr(cutWord, END_MACRO_KEYWORD)) {
-                    memset(cutWord, 0, MAX_WORD_LENGTH);
-                    continue;
-                } else fprintf(writeFile, "%s", cutWord);
+                /* no macro declared, a normal command */
+            } else fprintf(writeFile, "%s", cutWord);
+
+            /* reset word and cutWord */
+            memset(cutWord, 0, MAX_WORD_LENGTH);
+            memset(word, 0, MAX_WORD_LENGTH);
+            memset(shortenedCutWord, 0, MAX_WORD_LENGTH);
+            continue;
+        }
+
+        /* found a macro declaration previously, should ignore it's body */
+        if (macroStatus == IN_MACRO_BODY) {
+            /* if reached end of macro declaration, call it */
+            if (strstr(cutWord, END_MACRO_KEYWORD) != NULL) {
+                memcpy(shortenedCutWord, cutWord, strlen(cutWord)-1);
+                if (strcmp(shortenedCutWord, END_MACRO_KEYWORD) == 0) {
+                    /* "got out" of macro body */
+                    macroStatus = NOT_IN_MACRO;
+                }
             }
         }
+
+        /* reset word and cutWord */
         memset(cutWord, 0, MAX_WORD_LENGTH);
         memset(word, 0, MAX_WORD_LENGTH);
+        memset(shortenedCutWord, 0, MAX_WORD_LENGTH);
     }
 
     free(word);
