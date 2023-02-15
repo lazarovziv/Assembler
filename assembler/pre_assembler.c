@@ -203,12 +203,6 @@ void read_macros_from_file(FILE *file, hashTable *table) {
     free(word);
     free(macroName);
     free(macroBody);
-
-    for (j = 0; j < table->size; j++) {
-        if (table->items[j] != NULL) {
-            printf("key: %s\n", table->items[j]->key);
-        }
-    }
 }
 
 void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
@@ -223,7 +217,6 @@ void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
         j = 0;
         k = strlen(word);
         while (isspace(word[j])) j++;
-        if (word[j] == ';') continue;
         if (j == k) continue;
 
         while (isspace(word[k])) k--;
