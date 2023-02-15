@@ -1,5 +1,5 @@
-int firstGroupOps(int operation,int index,char *line);
-/* maybe change the return value of groupOneFirstArg to the number of addressing code */
-int groupOneFirstArg(char *word);
-int groupTwoSecondArg(char *word);
-int validSecondArgument(char *word);
+void copyWord(char *source,char *target,int size);
+/* validate the number by immediate addressing format and return its size */
+int immediateAddressing(char *word);
+void getArgument(char *source,char *target,int index);
+int terminatedCorrectly(char *line,int index);
