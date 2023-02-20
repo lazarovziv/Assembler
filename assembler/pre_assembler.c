@@ -118,6 +118,7 @@ void read_macros_from_file(FILE *file, hashTable *table) {
         j = 0;
         while (isspace(word[j]))
             j++;
+        if (word[j] == ';') continue;
         wordLength = strlen(&word[j]);
         /* ignoring \n character at the end */
         word[wordLength+j-1] = '\0';
@@ -161,8 +162,8 @@ void read_macros_from_file(FILE *file, hashTable *table) {
 
                 if (insertReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                     /* TODO: raise error of multiple macros with same name */
-                    printf(MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
-                    fprintf(stderr, "Macro %s already exists!\n", macroName);
+                    fprintf(stderr, "Macro %s already exists!\n%s\n",
+                            macroName, MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
                     break;
                 }
                 break;
@@ -174,7 +175,7 @@ void read_macros_from_file(FILE *file, hashTable *table) {
                         macroBody = (char *) malloc(sizeof(char) * (wordLength + 1));
                         atFirstMacroBody = 0;
                     }
-                    currentMacroBodyLength += wordLength + 1;
+                    currentMacroBodyLength += wordLength;
                     /* adding \n character as macro body should consist of several (or just 1) lines */
                     word[wordLength+j-1] = '\n';
                     strcpy(macroBody, &word[j]);
@@ -184,7 +185,7 @@ void read_macros_from_file(FILE *file, hashTable *table) {
                         break;
                     }
                     currentMacroBodyLength += wordLength;
-                    macroBody = (char*) realloc(macroBody, sizeof(char) * (currentMacroBodyLength + 1));
+                    macroBody = (char*) realloc(macroBody, sizeof(char) * (currentMacroBodyLength));
                     /* adding \n character as "deleted" it after skipped whitespaces of sentence */
                     word[wordLength+j-1] = '\n';
                     strcat(macroBody, &word[j]);
@@ -203,6 +204,13 @@ void read_macros_from_file(FILE *file, hashTable *table) {
     free(word);
     free(macroName);
     free(macroBody);
+
+    for (j = 0; j < table->size; j++) {
+        if (table->items[j] != NULL) {
+            printf("key: %s\nvalue:\n%s\n",
+                   table->items[j]->key, table->items[j]->value);
+        }
+    }
 }
 
 void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
@@ -218,6 +226,7 @@ void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
         k = strlen(word);
         while (isspace(word[j])) j++;
         if (j == k) continue;
+        if (word[j] == ';') continue;
 
         while (isspace(word[k])) k--;
 
@@ -246,6 +255,7 @@ void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
 
             /* if macro should be deployed here */
             if (contains_key(table, cutWord)) {
+                printf("key found: %s\n", cutWord);
                 /* setting value of key macroName */
                 fprintf(writeFile, "%s", get_value(table, cutWord));
                 /* no macro declared, a normal command */

@@ -90,7 +90,8 @@ int change_value(hashTable* table, char* key, char* value) {
 
     /* if value's length is longer than item's length */
     if (valueLength > itemValueLength) {
-        table->items[idx]->value = (char*) realloc(table->items[idx]->value, sizeof(char) * valueLength);
+        table->items[idx]->value = (char*) realloc(table->items[idx]->value,
+                                                   sizeof(char) * valueLength);
         /* filling new memory with NULL */
         memset(table->items[idx]->value, 0, sizeof(char) * valueLength);
     } else {
