@@ -83,6 +83,7 @@ int main(int argc, char *argv[]) {
         free(currentFileNameWrite);
     }
     for (i = 0; i < numOfFiles; i++) {
+        printf("READ %d\n", i);
         read_macros_from_file(readFiles[i], tables[i]);
         /* going back to start of readFile to reiterate it for writing */
         rewind(readFiles[i]);
@@ -221,6 +222,8 @@ void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
 
     enum macroState macroStatus = NOT_IN_MACRO;
 
+    printf("WRITE\n");
+
     while (fgets(word, MAX_WORD_LENGTH, readFile) != NULL) {
         j = 0;
         k = strlen(word);
@@ -253,13 +256,19 @@ void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
                 continue;
             }
 
+            cutWord[strlen(cutWord)-1] = '\0';
+            printf("checking: %s\n", cutWord);
+
             /* if macro should be deployed here */
             if (contains_key(table, cutWord)) {
                 printf("key found: %s\n", cutWord);
                 /* setting value of key macroName */
                 fprintf(writeFile, "%s", get_value(table, cutWord));
                 /* no macro declared, a normal command */
-            } else fprintf(writeFile, "%s", cutWord);
+            } else {
+                cutWord[strlen(cutWord)] = '\n';
+                fprintf(writeFile, "%s", cutWord);
+            }
 
             /* reset word and cutWord */
             memset(cutWord, 0, MAX_WORD_LENGTH);
