@@ -6,6 +6,7 @@
 typedef struct hashTableItem {
     char* key;
     char* value;
+    struct hashTableItem *next;
 } hashTableItem;
 
 typedef struct hashTable {
