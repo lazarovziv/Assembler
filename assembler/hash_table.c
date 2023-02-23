@@ -32,7 +32,7 @@ int init_hash_table(hashTable* table, int size) {
     table->size = size;
 
     for (i = 0; i < size; i++) {
-        table->items[i] = 0;
+        table->items[i] = NULL;
     }
     /* if memory allocated successfully */
     return 1;
@@ -69,18 +69,18 @@ int insert(hashTable* table, char* key, char* value) {
     idx = calculate_hash(key, table->size);
     last = (hashTableItem*) malloc(sizeof(hashTableItem*));
 
-    /* if idx is not taken */
-    if (table->items[idx] == NULL) table->items[idx] = last;
-
-    current = table->items[idx];
-
-    while (current->next) current = current->next;
-    current->next = last;
-
     /* if memory allocation was unsuccessful */
     if (last == NULL) {
         fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
         return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+    }
+
+    /* if idx is not taken */
+    if (table->items[idx] == NULL) table->items[idx] = last;
+    else {
+        current = table->items[idx];
+        while (current->next != NULL) current = current->next;
+        current->next = last;
     }
 
     /* setting key and value for hash table item */
@@ -102,10 +102,8 @@ int contains_key(hashTable* table, char* key) {
     if (table->items[idx] == NULL) return 0;
     current = table->items[idx];
 
-    printf("Checking key: %s (%lu)\n", key, strlen(key));
     if (strcmp(table->items[idx]->key, key) == 0) return 1;
 
-    printf("checking list...\n");
     while (current) {
         if (strcmp(current->key, key) == 0) return 1;
         current = current->next;
@@ -123,7 +121,6 @@ int change_value(hashTable* table, char* key, char* value) {
     }
 
     idx = calculate_hash(key, table->size);
-    printf("key: %s\nidx: %d\n", key, idx);
     current = table->items[idx];
     while (current) {
         if (strcmp(current->key, key) == 0) break;
@@ -139,9 +136,13 @@ int change_value(hashTable* table, char* key, char* value) {
                                                    sizeof(char) * valueLength);
         /* filling new memory with NULL */
         memset(current->value, 0, sizeof(char) * valueLength);
-    } else {
+    } else if (valueLength == itemValueLength) {
         /* filling previous value with NULL */
         memset(current->value, 0, sizeof(char) * itemValueLength);
+    } else {
+        current->value = (char*) realloc(current->value,
+                                         sizeof(char) * valueLength);
+        memset(current->value, 0, sizeof(char) * valueLength);
     }
     /* copying value to item */
     strcpy(current->value, value);
