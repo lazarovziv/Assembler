@@ -5,7 +5,7 @@
 #include "constants.h"
 
 #define MAX_WORD_LENGTH 81
-#define HASH_TABLE_SIZE 10000
+#define HASH_TABLE_SIZE 100
 
 #define READ_MODE "r"
 #define WRITE_MODE "w"
@@ -43,6 +43,11 @@ int main(int argc, char *argv[]) {
         currentFileNameLength = strlen(argv[i]);
         currentFileName = (char *) malloc(sizeof(char) * (currentFileNameLength + 4)); /* adding 4 for .as postfix */
         currentFileNameWrite = (char*) malloc(sizeof(char) * (currentFileNameLength + 4)); /* adding 6 as adding .am postfix */
+
+        if (currentFileName == NULL || currentFileNameWrite == NULL) {
+            fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+            return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+        }
 
         strcpy(currentFileName, argv[i]);
         /* adding ".as" postfix */
@@ -88,7 +93,7 @@ int main(int argc, char *argv[]) {
         if (!read_macros_from_file(readFiles[i], tables[i])) return MAIN_ERROR_CODE;
         /* going back to start of readFile to reiterate it for writing */
         rewind(readFiles[i]);
-        write_macros_to_file(readFiles[i], writeFiles[i], tables[i])
+        write_macros_to_file(readFiles[i], writeFiles[i], tables[i]);
     }
 
     /* freeing all file and hash tables separately */
@@ -214,6 +219,11 @@ int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
     char *cutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
     char *shortenedCutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
     char *word = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
+
+    if (word == NULL || shortenedCutWord == NULL || cutWord == NULL) {
+        fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+        return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+    }
 
     enum macroState macroStatus = NOT_IN_MACRO;
 

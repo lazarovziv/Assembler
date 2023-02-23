@@ -28,10 +28,10 @@ int init_hash_table(hashTable* table, int size) {
     if (!table) return 0;
     table->items = (hashTableItem**) malloc(sizeof(hashTableItem*) * size);
 
-    if (table->items == NULL) return 0;
+    if (table->items == NULL) return MEMORY_NOT_ALLOCATED_ERROR_CODE;
     table->size = size;
 
-    for (i = 0; i < size; i++) {
+    for (i = 0; i < table->size; i++) {
         table->items[i] = NULL;
     }
     /* if memory allocated successfully */
@@ -89,6 +89,11 @@ int insert(hashTable* table, char* key, char* value) {
     last->key = (char*) malloc(sizeof(char) * keyLength);
     last->value = (char*) malloc(sizeof(char) * valueLength);
 
+    if (last->key == NULL || last->value == NULL) {
+        fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+        return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+    }
+
     strcpy(last->key, key);
     strcpy(last->value, value);
 
@@ -134,6 +139,10 @@ int change_value(hashTable* table, char* key, char* value) {
     if (valueLength > itemValueLength) {
         current->value = (char*) realloc(current->value,
                                                    sizeof(char) * valueLength);
+        if (current->value == NULL) {
+            fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+            return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+        }
         /* filling new memory with NULL */
         memset(current->value, 0, sizeof(char) * valueLength);
     } else if (valueLength == itemValueLength) {
@@ -142,6 +151,11 @@ int change_value(hashTable* table, char* key, char* value) {
     } else {
         current->value = (char*) realloc(current->value,
                                          sizeof(char) * valueLength);
+        if (current->value == NULL) {
+            fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+            return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+        }
+
         memset(current->value, 0, sizeof(char) * valueLength);
     }
     /* copying value to item */
