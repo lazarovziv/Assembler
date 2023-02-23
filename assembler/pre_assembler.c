@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "hash_table.h"
+#include "constants.h"
 
 #define MAX_WORD_LENGTH 81
 #define HASH_TABLE_SIZE 10000
@@ -15,9 +16,8 @@ enum macroState {
     NOT_IN_MACRO, IN_MACRO_BODY, IN_MACRO_NAME, END_MACRO
 };
 
-void read_macros_from_file(FILE *file, hashTable *table);
-void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table);
-void write_macros_to(FILE *readFile, FILE *writeFile, hashTable *table);
+int read_macros_from_file(FILE *file, hashTable *table);
+int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table);
 
 int main(int argc, char *argv[]) {
     int numOfFiles = argc - 1;
@@ -84,10 +84,11 @@ int main(int argc, char *argv[]) {
     }
     for (i = 0; i < numOfFiles; i++) {
         printf("READ %d\n", i);
-        read_macros_from_file(readFiles[i], tables[i]);
+        if (!read_macros_from_file(readFiles[i], tables[i])) return MAIN_ERROR_CODE;
         /* going back to start of readFile to reiterate it for writing */
         rewind(readFiles[i]);
-        write_macros_to_file(readFiles[i], writeFiles[i], tables[i]);
+        if (!write_macros_to_file(
+                readFiles[i], writeFiles[i], tables[i])) return MAIN_ERROR_CODE;
     }
 
     /* freeing all file and hash tables separately */
@@ -105,7 +106,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void read_macros_from_file(FILE *file, hashTable *table) {
+int read_macros_from_file(FILE *file, hashTable *table) {
     int j, currentMacroBodyLength = 0, insertReturnCode, wordLength;
     int atFirstMacro = 1, atFirstMacroBody = 1;
     int macroLength = 0, tokenLength;
@@ -165,7 +166,7 @@ void read_macros_from_file(FILE *file, hashTable *table) {
                     /* TODO: raise error of multiple macros with same name */
                     fprintf(stderr, "Macro %s already exists!\n%s\n",
                             macroName, MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
-                    break;
+                    return MACRO_ALREADY_DEFINED_ERROR_CODE;
                 }
                 break;
             }
@@ -207,22 +208,21 @@ void read_macros_from_file(FILE *file, hashTable *table) {
     free(macroBody);
 
     for (j = 0; j < table->size; j++) {
-        if (table->items[j] != NULL) {
-            printf("key: %s\nvalue:\n%s\n",
-                   table->items[j]->key, table->items[j]->value);
+        if (table->items[j]) {
+            printf("key: %s\nvalue:\n%s\n", table->items[j]->key, table->items[j]->value);
         }
     }
+
+    return 1;
 }
 
-void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
+int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
     int j, k, cutIdx;
     char *cutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
     char *shortenedCutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
     char *word = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
 
     enum macroState macroStatus = NOT_IN_MACRO;
-
-    printf("WRITE\n");
 
     while (fgets(word, MAX_WORD_LENGTH, readFile) != NULL) {
         j = 0;
@@ -257,11 +257,9 @@ void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
             }
 
             cutWord[strlen(cutWord)-1] = '\0';
-            printf("checking: %s\n", cutWord);
 
             /* if macro should be deployed here */
             if (contains_key(table, cutWord)) {
-                printf("key found: %s\n", cutWord);
                 /* setting value of key macroName */
                 fprintf(writeFile, "%s", get_value(table, cutWord));
                 /* no macro declared, a normal command */
@@ -297,6 +295,8 @@ void write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
 
     free(word);
     free(cutWord);
+
+    return 1;
 }
 
 
