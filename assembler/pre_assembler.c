@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
             /* free all opened files in case one doesn't exist */
             for (j = 0; j < i; j++) fclose(readFiles[j]);
             free(readFiles);
-            return 1;
+            return MAIN_ERROR_CODE;
         }
         /* trying to open file to write to with all macros */
         if ((writeFiles[i-1] = fopen(currentFileNameWrite, WRITE_MODE)) == NULL) {
@@ -68,27 +68,27 @@ int main(int argc, char *argv[]) {
             /* free all opened files in case one doesn't exist */
             for (j = 0; j < i; j++) fclose(writeFiles[j]);
             free(writeFiles);
-            return 1;
+            return MAIN_ERROR_CODE;
         }
+
         /* initializing table in memory for current file */
         tables[i-1] = (hashTable*) malloc(sizeof(hashTable));
 
         if (!init_hash_table(tables[i-1], HASH_TABLE_SIZE)) {
             fprintf(stderr, "unsuccessful initialization of hash table.\n");
-            return 1;
+            return MAIN_ERROR_CODE;
         }
 
         /* finished deploying macros on this file */
         free(currentFileName);
         free(currentFileNameWrite);
     }
+
     for (i = 0; i < numOfFiles; i++) {
-        printf("READ %d\n", i);
         if (!read_macros_from_file(readFiles[i], tables[i])) return MAIN_ERROR_CODE;
         /* going back to start of readFile to reiterate it for writing */
         rewind(readFiles[i]);
-        if (!write_macros_to_file(
-                readFiles[i], writeFiles[i], tables[i])) return MAIN_ERROR_CODE;
+        write_macros_to_file(readFiles[i], writeFiles[i], tables[i])
     }
 
     /* freeing all file and hash tables separately */
@@ -163,7 +163,6 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                 insertReturnCode = insert(table, macroName, macroBody);
 
                 if (insertReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
-                    /* TODO: raise error of multiple macros with same name */
                     fprintf(stderr, "Macro %s already exists!\n%s\n",
                             macroName, MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
                     return MACRO_ALREADY_DEFINED_ERROR_CODE;
@@ -206,12 +205,6 @@ int read_macros_from_file(FILE *file, hashTable *table) {
     free(word);
     free(macroName);
     free(macroBody);
-
-    for (j = 0; j < table->size; j++) {
-        if (table->items[j]) {
-            printf("key: %s\nvalue:\n%s\n", table->items[j]->key, table->items[j]->value);
-        }
-    }
 
     return 1;
 }
