@@ -23,9 +23,9 @@ int main(int argc, char *argv[]) {
     int numOfFiles = argc - 1;
     int i, j;
     /* files received from program arguments */
-    FILE** readFiles = (FILE**) malloc(sizeof(FILE*) * numOfFiles);
+    FILE **readFiles = (FILE**) malloc(sizeof(FILE*) * numOfFiles);
     /* files to write and deploy the macros read from readFiles */
-    FILE** writeFiles = (FILE**) malloc(sizeof(FILE*) * numOfFiles);
+    FILE **writeFiles = (FILE**) malloc(sizeof(FILE*) * numOfFiles);
     hashTable **tables = (hashTable**) malloc(sizeof(hashTable*) * numOfFiles);
 
     char *currentFileNameWrite;
@@ -41,8 +41,8 @@ int main(int argc, char *argv[]) {
     /* storing all files in readFiles array */
     for (i = 1; i < argc; i++) {
         currentFileNameLength = strlen(argv[i]);
-        currentFileName = (char *) malloc(sizeof(char) * (currentFileNameLength + 4)); /* adding 4 for .as postfix */
-        currentFileNameWrite = (char*) malloc(sizeof(char) * (currentFileNameLength + 4)); /* adding 6 as adding .am postfix */
+        currentFileName = (char *) malloc(currentFileNameLength + 4); /* adding 4 for .as postfix */
+        currentFileNameWrite = (char*) malloc(currentFileNameLength + 4); /* adding 6 as adding .am postfix */
 
         if (currentFileName == NULL || currentFileNameWrite == NULL) {
             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
@@ -118,7 +118,7 @@ int read_macros_from_file(FILE *file, hashTable *table) {
     char *token;
     char *macroName, *macroBody;
     enum macroState macroStatus;
-    char *word = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
+    char *word = (char*) malloc(MAX_WORD_LENGTH);
 
     if (word == NULL) {
         fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
@@ -145,7 +145,7 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                     if (macroStatus == IN_MACRO_NAME) {
                         /* allocating memory for the first time */
                         if (atFirstMacro) {
-                            macroName = (char*) malloc(sizeof(char) * tokenLength);
+                            macroName = (char*) malloc(tokenLength);
                             if (macroName == NULL) {
                                 fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
                                 return MEMORY_NOT_ALLOCATED_ERROR_CODE;
@@ -154,7 +154,7 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                             atFirstMacro = 0;
                             /* reallocate memory if length of current macro name is longer */
                         } else if (tokenLength > macroLength) {
-                            macroName = (char*) realloc(macroName, sizeof(char) * tokenLength);
+                            macroName = (char*) realloc(macroName, tokenLength);
                             if (macroName == NULL) {
                                 fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
                                 return MEMORY_NOT_ALLOCATED_ERROR_CODE;
@@ -162,7 +162,7 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                             macroLength = tokenLength;
                         }
                         /* reset macroName */
-                        memset(macroName, 0, sizeof(char) * macroLength);
+                        memset(macroName, 0, macroLength);
                         /* set new value to macroName */
                         strcpy(macroName, token);
                         /* found "mcr" keyword */
@@ -192,7 +192,7 @@ int read_macros_from_file(FILE *file, hashTable *table) {
             case IN_MACRO_BODY: {
                 if (currentMacroBodyLength == 0) {
                     if (atFirstMacroBody) {
-                        macroBody = (char *) malloc(sizeof(char) * (wordLength + 1));
+                        macroBody = (char *) malloc(wordLength + 1);
                         if (macroBody == NULL) {
                             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
                             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
@@ -210,7 +210,7 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                     }
 
                     currentMacroBodyLength += wordLength;
-                    macroBody = (char*) realloc(macroBody, sizeof(char) * currentMacroBodyLength);
+                    macroBody = (char*) realloc(macroBody, currentMacroBodyLength);
                     if (macroBody == NULL) {
                         fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
                         return MEMORY_NOT_ALLOCATED_ERROR_CODE;
@@ -239,9 +239,9 @@ int read_macros_from_file(FILE *file, hashTable *table) {
 
 int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
     int j, k, cutIdx;
-    char *cutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
-    char *shortenedCutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
-    char *word = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
+    char *cutWord = (char*) malloc(MAX_WORD_LENGTH);
+    char *shortenedCutWord = (char*) malloc(MAX_WORD_LENGTH);
+    char *word = (char*) malloc(MAX_WORD_LENGTH);
 
     enum macroState macroStatus;
 
