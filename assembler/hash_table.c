@@ -86,8 +86,8 @@ int insert(hashTable* table, char* key, char* value) {
     /* setting key and value for hash table item */
     keyLength = strlen(key);
     valueLength = strlen(value);
-    last->key = (char*) malloc(sizeof(char) * keyLength);
-    last->value = (char*) malloc(sizeof(char) * valueLength);
+    last->key = (char*) malloc(keyLength);
+    last->value = (char*) malloc(valueLength);
 
     if (last->key == NULL || last->value == NULL) {
         fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
@@ -138,25 +138,25 @@ int change_value(hashTable* table, char* key, char* value) {
     /* if value's length is longer than item's length */
     if (valueLength > itemValueLength) {
         current->value = (char*) realloc(current->value,
-                                                   sizeof(char) * valueLength);
+                                                   valueLength);
         if (current->value == NULL) {
             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
         /* filling new memory with NULL */
-        memset(current->value, 0, sizeof(char) * valueLength);
+        memset(current->value, 0, valueLength);
     } else if (valueLength == itemValueLength) {
         /* filling previous value with NULL */
-        memset(current->value, 0, sizeof(char) * itemValueLength);
+        memset(current->value, 0, itemValueLength);
     } else if (valueLength > 0) {
         current->value = (char*) realloc(current->value,
-                                         sizeof(char) * valueLength);
+                                         valueLength);
         if (current->value == NULL) {
             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
 
-        memset(current->value, 0, sizeof(char) * valueLength);
+        memset(current->value, 0, valueLength);
     }
     /* copying value to item */
     strcpy(current->value, value);

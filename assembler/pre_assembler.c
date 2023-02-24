@@ -154,6 +154,7 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                             atFirstMacro = 0;
                             /* reallocate memory if length of current macro name is longer */
                         } else if (tokenLength > macroLength) {
+                            printf("realloc 0\n");
                             macroName = (char*) realloc(macroName, tokenLength);
                             if (macroName == NULL) {
                                 fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
@@ -210,6 +211,7 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                     }
 
                     currentMacroBodyLength += wordLength;
+                    printf("realloc 1\n");
                     macroBody = (char*) realloc(macroBody, currentMacroBodyLength);
                     if (macroBody == NULL) {
                         fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
