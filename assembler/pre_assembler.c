@@ -5,7 +5,7 @@
 #include "constants.h"
 
 #define MAX_WORD_LENGTH 81
-#define HASH_TABLE_SIZE 100
+#define HASH_TABLE_SIZE 10000
 
 #define READ_MODE "r"
 #define WRITE_MODE "w"
@@ -117,9 +117,10 @@ int read_macros_from_file(FILE *file, hashTable *table) {
     int macroLength = 0, tokenLength;
     char *token;
     char *macroName, *macroBody;
+    enum macroState macroStatus;
     char *word = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
 
-    enum macroState macroStatus = NOT_IN_MACRO;
+    macroStatus = NOT_IN_MACRO;
     /* traversing file for finding macros */
     while (fgets(word, MAX_WORD_LENGTH, file) != NULL) {
         j = 0;
@@ -191,7 +192,7 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                         break;
                     }
                     currentMacroBodyLength += wordLength;
-                    macroBody = (char*) realloc(macroBody, sizeof(char) * (currentMacroBodyLength));
+                    macroBody = (char*) realloc(macroBody, sizeof(char) * (currentMacroBodyLength+1));
                     /* adding \n character as "deleted" it after skipped whitespaces of sentence */
                     word[wordLength+j-1] = '\n';
                     strcat(macroBody, &word[j]);
@@ -211,6 +212,13 @@ int read_macros_from_file(FILE *file, hashTable *table) {
     free(macroName);
     free(macroBody);
 
+    for (j = 0; j < table->size; j++) {
+        if (table->items[j]) {
+            printf("key: %s\n", table->items[j]->key);
+            printf("value:\n%s\n", table->items[j]->value);
+        }
+    }
+
     return 1;
 }
 
@@ -219,13 +227,14 @@ int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
     char *cutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
     char *shortenedCutWord = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
     char *word = (char*) malloc(sizeof(char) * MAX_WORD_LENGTH);
+    enum macroState macroStatus;
 
     if (word == NULL || shortenedCutWord == NULL || cutWord == NULL) {
         fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
         return MEMORY_NOT_ALLOCATED_ERROR_CODE;
     }
 
-    enum macroState macroStatus = NOT_IN_MACRO;
+    macroStatus = NOT_IN_MACRO;
 
     while (fgets(word, MAX_WORD_LENGTH, readFile) != NULL) {
         j = 0;

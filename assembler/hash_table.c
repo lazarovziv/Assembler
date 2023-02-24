@@ -148,7 +148,7 @@ int change_value(hashTable* table, char* key, char* value) {
     } else if (valueLength == itemValueLength) {
         /* filling previous value with NULL */
         memset(current->value, 0, sizeof(char) * itemValueLength);
-    } else {
+    } else if (valueLength > 0) {
         current->value = (char*) realloc(current->value,
                                          sizeof(char) * valueLength);
         if (current->value == NULL) {
