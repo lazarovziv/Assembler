@@ -5,7 +5,7 @@
 #include "constants.h"
 
 #define MAX_WORD_LENGTH 81
-#define HASH_TABLE_SIZE 10000
+#define HASH_TABLE_SIZE 100
 
 #define READ_MODE "r"
 #define WRITE_MODE "w"
@@ -113,7 +113,8 @@ int main(int argc, char *argv[]) {
 
 int read_macros_from_file(FILE *file, hashTable *table) {
     int j, currentMacroBodyLength = 0, insertReturnCode, wordLength;
-    int atFirstMacro = 1, atFirstMacroBody = 1;
+    int macroBodyMaxLength = -1;
+    int atFirstMacro = 1;
     int macroLength = 0, tokenLength;
     char *token;
     char *macroName, *macroBody;
@@ -145,7 +146,7 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                     if (macroStatus == IN_MACRO_NAME) {
                         /* allocating memory for the first time */
                         if (atFirstMacro) {
-                            macroName = (char*) malloc(tokenLength);
+                            macroName = (char*) calloc(tokenLength, sizeof(char));
                             if (macroName == NULL) {
                                 fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
                                 return MEMORY_NOT_ALLOCATED_ERROR_CODE;
@@ -154,7 +155,6 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                             atFirstMacro = 0;
                             /* reallocate memory if length of current macro name is longer */
                         } else if (tokenLength > macroLength) {
-                            printf("realloc 0\n");
                             macroName = (char*) realloc(macroName, tokenLength);
                             if (macroName == NULL) {
                                 fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
@@ -181,26 +181,29 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                 currentMacroBodyLength = 0;
                 /* trying to insert macroBody into macroName key */
                 insertReturnCode = insert(table, macroName, macroBody);
-
                 if (insertReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                     fprintf(stderr, "Macro %s already exists!\n%s\n",
                             macroName, MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
+                    free(macroBody);
                     return MACRO_ALREADY_DEFINED_ERROR_CODE;
                 }
+                free(macroBody);
                 break;
             }
                 /* reading the macro body and adding it to the item with the "macroName" key in the hash table */
             case IN_MACRO_BODY: {
                 if (currentMacroBodyLength == 0) {
-                    if (atFirstMacroBody) {
-                        macroBody = (char *) malloc(wordLength + 1);
-                        if (macroBody == NULL) {
-                            fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
-                            return MEMORY_NOT_ALLOCATED_ERROR_CODE;
-                        }
-                        atFirstMacroBody = 0;
+                    macroBody = (char *) calloc(wordLength + 1, sizeof(char));
+                    if (macroBody == NULL) {
+                        fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+                        return MEMORY_NOT_ALLOCATED_ERROR_CODE;
                     }
+
                     currentMacroBodyLength += wordLength;
+                    /* checks reallocation of memory for last memory size of last macro body (can be shorter) */
+                    if (currentMacroBodyLength > macroBodyMaxLength) {
+                        macroBodyMaxLength = currentMacroBodyLength;
+                    }
                     /* adding \n character as macro body should consist of several (or just 1) lines */
                     word[wordLength+j-1] = '\n';
                     strcpy(macroBody, &word[j]);
@@ -210,16 +213,19 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                         break;
                     }
 
-                    currentMacroBodyLength += wordLength;
-                    printf("realloc 1\n");
-                    macroBody = (char*) realloc(macroBody, currentMacroBodyLength);
-                    if (macroBody == NULL) {
-                        fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
-                        return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+                    if (wordLength > 0) {
+                        currentMacroBodyLength += wordLength;
+                        /* TODO: realloc problem HERE */
+                        macroBody = (char*) realloc(macroBody, currentMacroBodyLength);
+                        if (!macroBody) {
+                            fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+                            return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+                        }
                     }
                     /* adding \n character as "deleted" it after skipped whitespaces of sentence */
                     word[wordLength+j-1] = '\n';
                     strcat(macroBody, &word[j]);
+                    printf("macroBody:\n%s\n", macroBody);
                 }
                 break;
             }

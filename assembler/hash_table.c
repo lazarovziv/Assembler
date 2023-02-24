@@ -137,6 +137,7 @@ int change_value(hashTable* table, char* key, char* value) {
 
     /* if value's length is longer than item's length */
     if (valueLength > itemValueLength) {
+        printf("realloc change 0\n");
         current->value = (char*) realloc(current->value,
                                                    valueLength);
         if (current->value == NULL) {
@@ -149,6 +150,7 @@ int change_value(hashTable* table, char* key, char* value) {
         /* filling previous value with NULL */
         memset(current->value, 0, itemValueLength);
     } else if (valueLength > 0) {
+        printf("realloc change 1\n");
         current->value = (char*) realloc(current->value,
                                          valueLength);
         if (current->value == NULL) {
