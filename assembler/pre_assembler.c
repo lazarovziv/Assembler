@@ -182,7 +182,7 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                 /* trying to insert macroBody into macroName key */
                 insertReturnCode = insert(table, macroName, macroBody);
                 if (insertReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
-                    fprintf(stderr, "Macro %s already exists!\n%s\n",
+                    fprintf(stderr, "Macro %s:\n%s",
                             macroName, MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
                     free(macroBody);
                     return MACRO_ALREADY_DEFINED_ERROR_CODE;
@@ -215,7 +215,6 @@ int read_macros_from_file(FILE *file, hashTable *table) {
 
                     if (wordLength > 0) {
                         currentMacroBodyLength += wordLength;
-                        /* TODO: realloc problem HERE */
                         macroBody = (char*) realloc(macroBody, currentMacroBodyLength);
                         if (!macroBody) {
                             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
@@ -225,7 +224,6 @@ int read_macros_from_file(FILE *file, hashTable *table) {
                     /* adding \n character as "deleted" it after skipped whitespaces of sentence */
                     word[wordLength+j-1] = '\n';
                     strcat(macroBody, &word[j]);
-                    printf("macroBody:\n%s\n", macroBody);
                 }
                 break;
             }
@@ -271,12 +269,12 @@ int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
 
         for (cutIdx = j; cutIdx < k; cutIdx++) cutWord[cutIdx-j] = word[cutIdx];
 
+        /* encountered a comment */
         if (strstr(cutWord, ";")) {
-            /* reset word and cutWord */
-            memset(cutWord, 0, MAX_WORD_LENGTH);
-            memset(word, 0, MAX_WORD_LENGTH);
-            memset(shortenedCutWord, 0, MAX_WORD_LENGTH);
-            continue;
+            /* finding comment declaration */
+            for (; cutWord[k] != ';'; k--);
+            /* reinitializing cutWord */
+            cutWord[k] = '\0';
         }
 
         /* if finished with macro deployment OR haven't found one yet */

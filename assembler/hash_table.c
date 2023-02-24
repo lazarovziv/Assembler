@@ -63,6 +63,8 @@ char* get_value(hashTable* table, char* key) {
 int insert(hashTable* table, char* key, char* value) {
     int idx, keyLength, valueLength;
     hashTableItem *current, *last;
+    if (strlen(key) == 0) return HASH_TABLE_INSERT_EMPTY_KEY_ERROR_CODE;
+    if (strlen(value) == 0) return HASH_TABLE_INSERT_EMPTY_VALUE_ERROR_CODE;
     /* before calculating hash, checking if key exists */
     if (contains_key(table, key)) return HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE;
 
@@ -137,7 +139,6 @@ int change_value(hashTable* table, char* key, char* value) {
 
     /* if value's length is longer than item's length */
     if (valueLength > itemValueLength) {
-        printf("realloc change 0\n");
         current->value = (char*) realloc(current->value,
                                                    valueLength);
         if (current->value == NULL) {
@@ -150,7 +151,6 @@ int change_value(hashTable* table, char* key, char* value) {
         /* filling previous value with NULL */
         memset(current->value, 0, itemValueLength);
     } else if (valueLength > 0) {
-        printf("realloc change 1\n");
         current->value = (char*) realloc(current->value,
                                          valueLength);
         if (current->value == NULL) {
