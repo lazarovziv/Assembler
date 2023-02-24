@@ -69,7 +69,7 @@ int insert(hashTable* table, char* key, char* value) {
     if (contains_key(table, key)) return HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE;
 
     idx = calculate_hash(key, table->size);
-    last = (hashTableItem*) malloc(sizeof(hashTableItem*));
+    last = (hashTableItem*) malloc(sizeof(hashTableItem));
 
     /* if memory allocation was unsuccessful */
     if (last == NULL) {
@@ -109,7 +109,8 @@ int contains_key(hashTable* table, char* key) {
     if (table->items[idx] == NULL) return 0;
     current = table->items[idx];
 
-    if (strcmp(table->items[idx]->key, key) == 0) return 1;
+    if (strcmp(current->key, key) == 0) return 1;
+    current = current->next;
 
     while (current) {
         if (strcmp(current->key, key) == 0) return 1;

@@ -18,8 +18,15 @@ enum macroState {
 
 int read_macros_from_file(FILE *file, hashTable *table);
 int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table);
+int deploy_macros(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
+    if (!deploy_macros(argc, argv)) return 0;
+
+    return 1;
+}
+
+int deploy_macros(int argc, char *argv[]) {
     int numOfFiles = argc - 1;
     int i, j;
     /* files received from program arguments */
@@ -36,7 +43,7 @@ int main(int argc, char *argv[]) {
     const char fileWritePostfix[] = ".am";
 
     /* no files specified */
-    if (argc == 1) return 1;
+    if (argc == 1) return 0;
 
     /* storing all files in readFiles array */
     for (i = 1; i < argc; i++) {
@@ -108,7 +115,7 @@ int main(int argc, char *argv[]) {
     free(readFiles);
     free(writeFiles);
     free(tables);
-    return 0;
+    return 1;
 }
 
 int read_macros_from_file(FILE *file, hashTable *table) {
@@ -293,7 +300,7 @@ int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
             cutWord[strlen(cutWord)-1] = '\0';
 
             /* if macro should be deployed here */
-            if (contains_key(table, cutWord)) {
+            if (!strstr(cutWord, " ") && contains_key(table, cutWord)) {
                 /* setting value of key macroName */
                 fprintf(writeFile, "%s", get_value(table, cutWord));
                 /* no macro declared, a normal command */

@@ -12,3 +12,20 @@
 #define HASH_TABLE_KEY_DOESNT_EXIST_ERROR_MESSAGE "This key doesn't exist in the hash table.\n"
 #define FILE_NOT_EXIST_ERROR_MESSAGE "The file you specified doesn't exist..\n"
 #define MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE "Memory wasn't allocated successfully.\n"
+
+#define MOV_COMMAND_CODE 0
+#define CMP_COMMAND_CODE 1
+#define ADD_COMMAND_CODE 2
+#define SUB_COMMAND_CODE 3
+#define NOT_COMMAND_CODE 4
+#define CLR_COMMAND_CODE 5
+#define LEA_COMMAND_CODE 6
+#define INC_COMMAND_CODE 7
+#define DEC_COMMAND_CODE 8
+#define JMP_COMMAND_CODE 9
+#define BNE_COMMAND_CODE 10
+#define RED_COMMAND_CODE 11
+#define PRN_COMMAND_CODE 12
+#define JSR_COMMAND_CODE 13
+#define RTS_COMMAND_CODE 14
+#define STOP_COMMAND_CODE 15
