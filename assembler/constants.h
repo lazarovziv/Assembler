@@ -13,6 +13,7 @@
 #define FILE_NOT_EXIST_ERROR_MESSAGE "The file you specified doesn't exist..\n"
 #define MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE "Memory wasn't allocated successfully.\n"
 
+
 #define MOV_COMMAND_CODE 0
 #define CMP_COMMAND_CODE 1
 #define ADD_COMMAND_CODE 2

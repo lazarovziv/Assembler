@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../hash_table.h"
 
 void print_table(hashTable *table) {
@@ -13,7 +14,7 @@ void print_table(hashTable *table) {
             while (current) {
                 printf("step: %d\n", step);
                 printf("key: %s\n", current->key);
-                printf("value: %s\n", current->value);
+                printf("value: %s\nlength: %lu\n", current->value, strlen(current->value));
                 current = current->next;
                 step++;
             }
@@ -52,6 +53,7 @@ int test_change_value(hashTable *table) {
 
     return 0;
 }
+
 
 int main() {
     hashTable *table = (hashTable*) malloc(sizeof(hashTable*));
