@@ -255,6 +255,9 @@ int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
     char *cutWord = (char*) malloc(MAX_WORD_LENGTH);
     char *shortenedCutWord = (char*) malloc(MAX_WORD_LENGTH);
     char *word = (char*) malloc(MAX_WORD_LENGTH);
+    char *tempWord = (char*) malloc(MAX_WORD_LENGTH);
+    char *token;
+    int firstInLine = 1, deployedMacro = 0, enteredMacro = 0;
 
     enum macroState macroStatus;
 
@@ -278,41 +281,58 @@ int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
 
         /* encountered a comment */
         if (strstr(cutWord, ";")) {
-            /* finding comment declaration */
-            for (; cutWord[k] != ';'; k--);
-            /* reinitializing cutWord */
-            cutWord[k] = '\0';
+            /* reset word and cutWord */
+            memset(cutWord, 0, MAX_WORD_LENGTH);
+            memset(word, 0, MAX_WORD_LENGTH);
+            memset(shortenedCutWord, 0, MAX_WORD_LENGTH);
+            memset(tempWord, 0, MAX_WORD_LENGTH);
+            continue;
         }
 
         /* if finished with macro deployment OR haven't found one yet */
         if (macroStatus == NOT_IN_MACRO) {
-            /* check if macro is declared here */
-            if (strstr(cutWord, MACRO_KEYWORD) != NULL
-            && strstr(cutWord, " ") != NULL) {
-                macroStatus = IN_MACRO_BODY;
-                /* reset word and cutWord */
-                memset(cutWord, 0, MAX_WORD_LENGTH);
-                memset(word, 0, MAX_WORD_LENGTH);
-                memset(shortenedCutWord, 0, MAX_WORD_LENGTH);
-                continue;
-            }
-
+            /* getting rid of \n character */
             cutWord[strlen(cutWord)-1] = '\0';
+            strcpy(tempWord, cutWord);
 
-            /* if macro should be deployed here */
-            if (!strstr(cutWord, " ") && contains_key(table, cutWord)) {
-                /* setting value of key macroName */
-                fprintf(writeFile, "%s", get_value(table, cutWord));
-                /* no macro declared, a normal command */
-            } else {
-                cutWord[strlen(cutWord)] = '\n';
-                fprintf(writeFile, "%s", cutWord);
+            token = strtok(tempWord, " \t");
+            /* traversing every word in sentence to check for macro deployments */
+            while (token != NULL) {
+                /* if reached a macro declaration */
+                if (strcmp(token, MACRO_KEYWORD) == 0) {
+                    macroStatus = IN_MACRO_BODY;
+                    enteredMacro = 1;
+                    break;
+                }
+                /* checking if macro is supposed to be deployed here */
+                if (contains_key(table, token)) {
+                    if (!firstInLine) fprintf(writeFile, "%s", " ");
+                    fprintf(writeFile, "%s", get_value(table, token));
+                    deployedMacro = 1;
+                } else {
+                    if (firstInLine) {
+                        fprintf(writeFile, "%s", token);
+                        firstInLine = 0;
+                    } else {
+                        fprintf(writeFile, " %s", token);
+                    }
+                }
+
+                token = strtok(NULL, " \t");
             }
+
+            if (!deployedMacro && !enteredMacro) {
+                fprintf(writeFile, "%s", "\n");
+                enteredMacro = 0;
+            } else deployedMacro = 0;
+
+            firstInLine = 1;
 
             /* reset word and cutWord */
             memset(cutWord, 0, MAX_WORD_LENGTH);
             memset(word, 0, MAX_WORD_LENGTH);
             memset(shortenedCutWord, 0, MAX_WORD_LENGTH);
+            memset(tempWord, 0, MAX_WORD_LENGTH);
             continue;
         }
 
@@ -324,6 +344,7 @@ int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
                 if (strcmp(shortenedCutWord, END_MACRO_KEYWORD) == 0) {
                     /* "got out" of macro body */
                     macroStatus = NOT_IN_MACRO;
+                    enteredMacro = 0;
                 }
             }
         }
@@ -332,12 +353,13 @@ int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
         memset(cutWord, 0, MAX_WORD_LENGTH);
         memset(word, 0, MAX_WORD_LENGTH);
         memset(shortenedCutWord, 0, MAX_WORD_LENGTH);
+        memset(tempWord, 0, MAX_WORD_LENGTH);
     }
 
     free(word);
     free(cutWord);
+    free(shortenedCutWord);
+    free(tempWord);
 
     return 1;
 }
-
-
