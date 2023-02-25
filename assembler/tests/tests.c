@@ -2,6 +2,27 @@
 #include <stdlib.h>
 #include "../hash_table.h"
 
+void print_table(hashTable *table) {
+    int i, step;
+    hashTableItem *current;
+    for (i = 0; i < table->size; i++) {
+        if (table->items[i]) {
+            current = table->items[i];
+            step = 0;
+            printf("i: %d\n", i);
+            while (current) {
+                printf("step: %d\n", step);
+                printf("key: %s\n", current->key);
+                printf("value: %s\n", current->value);
+                current = current->next;
+                step++;
+            }
+            printf("\n");
+        }
+    }
+    printf("\n");
+}
+
 int test_insert(hashTable *table) {
     char k;
     char key[6] = "key";
@@ -19,29 +40,26 @@ int test_insert(hashTable *table) {
         insert(table, key, value);
     }
 
+    print_table(table);
+
+    return 0;
+}
+
+int test_change_value(hashTable *table) {
+    char key[] = "key14";
+    char value[] = "changed";
+    if (change_value(table, key, value)) print_table(table);
+
     return 0;
 }
 
 int main() {
-    int i, step;
-    hashTableItem *current;
     hashTable *table = (hashTable*) malloc(sizeof(hashTable*));
     init_hash_table(table, 5);
+
     test_insert(table);
 
-    for (i = 0; i < table->size; i++) {
-        if (table->items[i]) {
-            current = table->items[i];
-            step = 0;
-            printf("i: %d\n", i);
-            while (current) {
-                printf("step: %d\n", step);
-                printf("key: %s\n", current->key);
-                current = current->next;
-                step++;
-            }
-            printf("\n");
-        }
-    }
+    test_change_value(table);
+
     return 0;
 }
