@@ -106,6 +106,12 @@
 		<Unit filename="C:/Users/uriel/CLionProjects/Assembler/pre_assembler.c">
 			<Option target="Maman14"/>
 		</Unit>
+		<Unit filename="C:/Users/uriel/CLionProjects/Assembler/validate_file.c">
+			<Option target="Maman14"/>
+		</Unit>
+		<Unit filename="C:/Users/uriel/CLionProjects/Assembler/validate_file.h">
+			<Option target="Maman14"/>
+		</Unit>
 		<Unit filename="C:/Users/uriel/CLionProjects/Assembler/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\"/>
 		</Unit>

@@ -248,6 +248,30 @@ pre_assembler.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Maman14.dir\build.make CMakeFiles/Maman14.dir/pre_assembler.c.s
 .PHONY : pre_assembler.c.s
 
+validate_file.obj: validate_file.c.obj
+.PHONY : validate_file.obj
+
+# target to build an object file
+validate_file.c.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Maman14.dir\build.make CMakeFiles/Maman14.dir/validate_file.c.obj
+.PHONY : validate_file.c.obj
+
+validate_file.i: validate_file.c.i
+.PHONY : validate_file.i
+
+# target to preprocess a source file
+validate_file.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Maman14.dir\build.make CMakeFiles/Maman14.dir/validate_file.c.i
+.PHONY : validate_file.c.i
+
+validate_file.s: validate_file.c.s
+.PHONY : validate_file.s
+
+# target to generate assembly for a file
+validate_file.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Maman14.dir\build.make CMakeFiles/Maman14.dir/validate_file.c.s
+.PHONY : validate_file.c.s
+
 # Help Target
 help:
 	@echo The following are some of the valid targets for this Makefile:
@@ -272,6 +296,9 @@ help:
 	@echo ... pre_assembler.obj
 	@echo ... pre_assembler.i
 	@echo ... pre_assembler.s
+	@echo ... validate_file.obj
+	@echo ... validate_file.i
+	@echo ... validate_file.s
 .PHONY : help
 
 

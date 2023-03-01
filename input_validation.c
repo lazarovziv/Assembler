@@ -4,18 +4,15 @@
 #include "input_validation.h"
 #include "constants.h"
 #include "functions.h"
-#include <stdio.h>
 
-char *instruction_sentence[] = {".data", ".string", ".entry", ".extern"};
-char *firstGroup[] = {"mov", "cmp", "add", "sub", "lea"};
-char *secondGroup[] = {"not", "clr", "inc", "dec", "jmp", "bne", "red", "prn", "jsr"};
-char *thirdGroup[] = {"rts", "stop"};
-char *registers[] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
 
-int firstGroupOps(int operation, int index, char *line) {
+
+
+
+enum status {COMMA,NUMBER,DONE};
+int firstGroupOps(int operation, char *line) {
     int i = 0;
     int wordSize = 0;
-    char *word;
     char *firstParameter;
     char *secondParameter;
     int copyFromMem = 0;
@@ -34,7 +31,7 @@ int firstGroupOps(int operation, int index, char *line) {
     i++; /* skip first comma */
     while (isspace(line[i]) && line[i] != '\0') i++;
     copyFromMem = i; /* start copying the second word */
-    while (!isspace(line[i]) && line[i] != '\0') {
+    while (isalpha(line[i]) || isdigit(line[i])) {
         i++;
     }
     wordSize = i - copyFromMem;
@@ -57,11 +54,13 @@ int firstGroupOps(int operation, int index, char *line) {
     return 1;
 }
 
-int secondGroupOps(char *line){
+int secondGroupOps(char *line, int operation) {
     int i = 0;
     int wordSize = 0;
-    char *param;
+    char *argument;
     int copyFromMem = 0;
+    char *firstParam;
+    char *secondParam;
 
     /* skip whitespaces */
     while (isspace(line[i]))
@@ -69,23 +68,70 @@ int secondGroupOps(char *line){
 
     /* get first argument */
     copyFromMem = i;
-    while (line[i] != ',' && line[i] != '\0') i++;
-    wordSize = i - copyFromMem + 1;
-    param = (char *) malloc(sizeof(char *) * wordSize);
-    copyWord(&line[copyFromMem], param, wordSize);
+    while ((isalpha(line[i]) || isdigit(line[i]))) i++;
+    wordSize = i - copyFromMem;
+    argument = (char *) malloc(sizeof(char *) * wordSize);
+    copyWord(&line[copyFromMem], argument, wordSize);
 
-    if(!groupTwoArg(line) || !terminatedCorrectly(line,i - 1))
-        return 0;
+    switch (operation) {
+        case NOT_CODE:
+        case DEC_CODE:
+        case INC_CODE:
+        case CLR_CODE:
+        case RED_CODE:
+            if (!validRegisterOrLabel(argument))
+                return 0;
+            break;
+        case PRN_CODE:
+            if (!validRegisterOrLabel(argument) || !immediateAddressing(argument))
+                return 0;
+        case JMP_CODE:
+        case BNE_CODE:
+        case JSR_CODE:
 
-    return 1;
+
+            /* must jump into a label */
+            if (!isLabel(argument) || line[i] != '(') {
+                return 0;
+            }
+            i++; /* skip the '(' */
+            /* get first parameter */
+            copyFromMem = i;
+            if(line[i] == '#')
+                i++;
+            while(isalpha(line[i]) || isdigit(line[i])) i++;
+            wordSize = i - copyFromMem;
+            firstParam = (char *) malloc(sizeof(char *) * wordSize);
+            copyWord(&line[copyFromMem], firstParam, wordSize);
+
+            i++;
+            copyFromMem = i; /* start copying the second word */
+            while (isalpha(line[i]) || isdigit(line[i])) {
+                i++;
+            }
+            wordSize = i - copyFromMem;
+            secondParam = (char *) malloc(sizeof(char *) * wordSize);
+            copyWord(&line[copyFromMem], secondParam, wordSize);
+
+            if(!immediateAddressing(firstParam) && !isRegister(firstParam) && !isLabel(firstParam))
+                return 0;
+            if(!immediateAddressing(secondParam) && !isRegister(secondParam) && !isLabel(secondParam))
+                return 0;
+
+            if(line[i] != ')')
+                return 0;
+
+            /* incrementing i in order to skip the ')' */
+            i++;
+    }
+
+    return terminatedCorrectly(line, i);
 }
 
 int groupOneFirstArg(char *word, int operation) {
     char firstCharacter = word[0];
     int index = 0; /* get second character */
-    int i;
-    char *reg;
-    int foundReg = 0;
+
 
     if (operation >= MOV_CODE && operation <= SUB_CODE) {
 
@@ -98,12 +144,10 @@ int groupOneFirstArg(char *word, int operation) {
             return 0;
         }
     } else if (operation == LEA_CODE && immediateAddressing(word)) {
-
         /* TODO: error */
         return 0;
     }
     while (!isspace(word[index]) && word[index] != '\0' && word[index] != ',') {
-        printf("current: %c\n", word[index]);
         index++;
     }
     while (isspace(word[index]) && word[index] != '\0')
@@ -119,35 +163,105 @@ int groupOneFirstArg(char *word, int operation) {
 int groupOneSecondArg(char *word, int operation) {
     char firstCharacter = word[0];
 
-    if (firstCharacter == ',' ) {
+    if (firstCharacter == ',') {
         /* TODO: error multiple commas */
         return 0;
-    }
-    else if(strlen(word) == 0){
+    } else if (strlen(word) == 0) {
         /* TODO: missing parameter */
         return 0;
-    }
-    else if (operation == CMP_CODE && word[firstCharacter] == '#' && immediateAddressing(word)) {
+    } else if (operation == CMP_CODE && word[firstCharacter] == '#' && immediateAddressing(word)) {
 
         /* TODO: error invalid number */
         return 0;
-    }
-    else if (!isLabel(word) && !isRegister(word)) {
+    } else if (!isLabel(word) && !isRegister(word)) {
         /* TODO: error */
         return 0;
     }
 
 
-
     return 1;
 }
 
-int groupTwoArg(char *line){
-    if(strlen(line) == 0){
+int validRegisterOrLabel(char *line) {
+    if (strlen(line) == 0) {
         /* missing parameter */
-    }
-    else if(!isLabel(line) && !isRegister(line)){
+    } else if (!isLabel(line) && !isRegister(line)) {
         return 0;
     }
     return 1;
 }
+
+int thirdGroupOps(char *line){
+    int i = 0;
+    while(isalpha(line[i])) i++;
+    return terminatedCorrectly(line,i);
+}
+
+int validData(char *line){
+    int i = 0;
+    enum status state;
+    char *currentNum;
+    int copyFromHere;
+    int numOfDigits;
+    state = NUMBER;
+    /* skip whitespaces */
+    while(isspace(line[i])) i++;
+
+    while(line[i] != '\0'){
+        switch(state){
+            case NUMBER:
+                copyFromHere = i;
+                while(!isspace(line[i]) && line[i] != ',' && line[i] != '\0') i++;
+                numOfDigits = i - copyFromHere;
+                currentNum = (char*)malloc(sizeof(char*) * numOfDigits);
+                copyWord(&line[copyFromHere],currentNum,numOfDigits);
+                /* invalid number input */
+                if(validNumber(currentNum) == 0){
+                    return 0;
+                }
+
+                /* continue running until ',' or '\0' */
+                while(isspace(line[i])) i++;
+                if(line[i] != ',' && line[i] != '\0')
+                    return 0;
+
+                if(line[i] == '\0')
+                    state = DONE;
+                else
+                    state = COMMA;
+                break;
+
+            case COMMA:
+                i++;
+                while(isspace(line[i])) i++;
+                if(line[i] != '+' && line[i] != '-' && !isdigit(line[i]))
+                    return 0;
+                state = NUMBER;
+                break;
+
+            case DONE:
+                return 1;
+        }
+    }
+    return 1;
+}
+
+int validString(char *line){
+    int i = 0;
+    int finalChar = strlen(line) - 1;
+    /*skip whitespaces */
+    while(isspace(line[i])) i++;
+
+    if(line[i] != '"' || line[finalChar] != '"')
+        return 0;
+    return 1;
+}
+
+int validEntryOrExtern(char *line){
+    int i = 0;
+    /*skip whitespaces */
+    while(isspace(line[i])) i++;
+
+    return isLabel(&line[i]);
+}
+

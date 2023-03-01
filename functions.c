@@ -12,7 +12,9 @@ void copyWord(char *source, char *target, int size) {
 
 int immediateAddressing(char *word) {
     int index = 1;
-    if (!isdigit(word[index]) && word[index] != '+' && word[index] != '-') {
+    if(word[0] != '#')
+        return 0;
+    if (!isdigit(word[index]) && word[index] != '+' && word[index] != '-' ) {
         /* TODO: error */
         return 0;
     }
@@ -20,10 +22,8 @@ int immediateAddressing(char *word) {
     while (isdigit(word[index])) index++; /* read the entire number */
     while (isspace(word[index])) index++;
 
-    if (word[index] != ',') {
-        /* TODO: error */
-        return 0;
-    }
+
+
     return index;
 }
 
@@ -38,18 +38,15 @@ void getArgument(char *line, char *target, int index) {
 }
 
 int terminatedCorrectly(char *line, int index) {
-    int i;
-    for(i = index;i < strlen(line);i++){
-        if(line[i] != '\0' && !isspace(line[i]))
-            return 0;
-    }
-    return 1;
+    int i = index;
+    while(isspace(line[i]) && line[i] != '\0')
+        i++;
+    return line[i] == '\0';
 }
 
 int isLabel(char *line) {
     int i;
     char firstChar = line[0];
-    char secondChar;
 
     for (i = 0; i < strlen(line); i++) {
         if (!isalpha(line[i]) && !isdigit(line[i]) && line[i] != ',') {
@@ -86,3 +83,17 @@ int isRegister(char *line) {
     return 0;
 
 }
+
+int validNumber(char *num){
+    int i = 0;
+    if(!isdigit(num[0]) && num[0] != '+' && num[0] != '-')
+        return 0;
+    i++;
+    while(num[i] != '\0'){
+        if(!isdigit(num[i]))
+            return 0;
+        i++;
+    }
+    return 1;
+}
+

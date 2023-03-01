@@ -13,6 +13,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "C:/Users/uriel/CLionProjects/Assembler/hash_table.c" "CMakeFiles/Maman14.dir/hash_table.c.obj" "gcc" "CMakeFiles/Maman14.dir/hash_table.c.obj.d"
   "C:/Users/uriel/CLionProjects/Assembler/input_validation.c" "CMakeFiles/Maman14.dir/input_validation.c.obj" "gcc" "CMakeFiles/Maman14.dir/input_validation.c.obj.d"
   "C:/Users/uriel/CLionProjects/Assembler/pre_assembler.c" "CMakeFiles/Maman14.dir/pre_assembler.c.obj" "gcc" "CMakeFiles/Maman14.dir/pre_assembler.c.obj.d"
+  "C:/Users/uriel/CLionProjects/Assembler/validate_file.c" "CMakeFiles/Maman14.dir/validate_file.c.obj" "gcc" "CMakeFiles/Maman14.dir/validate_file.c.obj.d"
   )
 
 # Targets to which this target links.
