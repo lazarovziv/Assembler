@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../pre_assembler.h"
+#include "../encoder.h"
+
+void test_encode_mov() {
+    char *command = "mov r5, r2";
+    enum addressingType first, second;
+    encode_mov_command(command, &first, &second);
+}
 
 void print_table(hashTable *table) {
     int i, step;
@@ -13,7 +19,7 @@ void print_table(hashTable *table) {
             printf("i: %d\n", i);
             while (current) {
                 printf("step: %d\n", step);
-                printf("key (%lu): %s\n", strlen(current->key), current->key);
+                printf("key (length %lu): %s\n", strlen(current->key), current->key);
                 printf("value:\n%s\n", current->value);
                 current = current->next;
                 step++;
@@ -176,16 +182,20 @@ void test_read_from_file() {
     print_table(table);
 }
 
-int main() {
-    hashTable *table = (hashTable*) malloc(sizeof(hashTable));
+void test_first_scan() {
+    int IC = 100, DC = 100;
+    FILE *file = fopen("y.as", READ_MODE);
+
+    hashTable *table = (hashTable *) malloc(sizeof(hashTable));
     init_hash_table(table, 10);
 
-    test_insert(table);
+    first_scan(file, table, &IC, &DC);
 
-    test_change_value(table);
+    print_table(table);
+}
 
-    printf("--------------------------------\n");
-    test_read_from_file();
+int main() {
+    test_first_scan();
 
     return 0;
 }
