@@ -1,11 +1,5 @@
 #include "pre_assembler.h"
 
-int main(int argc, char *argv[]) {
-    if (!deploy_macros(argc, argv)) return 0;
-
-    return 1;
-}
-
 int deploy_macros(int argc, char *argv[]) {
     int numOfFiles = argc - 1;
     int i, j;

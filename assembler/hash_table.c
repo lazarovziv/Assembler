@@ -15,7 +15,7 @@ unsigned int calculate_hash(char *input, int size) {
     int i;
     for (i = 0; input[i] != '\0'; i++) {
         /* setting each possible character a code for hashing function:
-         * '0'=1, '1'=2,..., '9'=10, 'a'=11, 'b'=12,...,'z'=36, 'A'=37, 'B'=38,...,'Z'=62 */
+         * '0'=1, '1'=2,..., '9'=10, 'a'=11, 'b'=12,...,'z'=36, 'A'=37, 'B'=38,...,'Z'=62, '_'=63 */
         if (islower(input[i])) sum = (sum * FIRST_PRIME) ^ ((input[i]-86) * SECOND_PRIME);  /* sum = (sum + powerPrime * (input[i]-86)) % HASH_MOD; */
         else if (isupper(input[i])) sum = (sum * FIRST_PRIME) ^ ((input[i]-28) * SECOND_PRIME); /* sum = (sum + powerPrime * (input[i]-28)) % HASH_MOD; */
         else if (isdigit(input[i])) sum = (sum * FIRST_PRIME) ^ ((input[i]-47) * SECOND_PRIME); /* sum = (sum + powerPrime * (input[i]-47)) % HASH_MOD; */
@@ -23,10 +23,10 @@ unsigned int calculate_hash(char *input, int size) {
     return sum % size;
 }
 
-int init_hash_table(hashTable* table, int size) {
+int init_hash_table(hashTable *table, int size) {
     int i;
     if (!table) return 0;
-    table->items = (hashTableItem**) malloc(sizeof(hashTableItem*) * size);
+    table->items = (hashTableItem **) malloc(sizeof(hashTableItem *) * size);
 
     if (table->items == NULL) return MEMORY_NOT_ALLOCATED_ERROR_CODE;
     table->size = size;
@@ -38,7 +38,7 @@ int init_hash_table(hashTable* table, int size) {
     return 1;
 }
 
-char* get_value(hashTable* table, char* key) {
+char *get_value(hashTable *table, char *key) {
     int idx;
     hashTableItem *current;
 
@@ -60,7 +60,7 @@ char* get_value(hashTable* table, char* key) {
     return 0;
 }
 
-int insert(hashTable* table, char* key, char* value) {
+int insert(hashTable *table, char *key, char *value) {
     int idx, keyLength, valueLength;
     hashTableItem *current, *last;
     if (strlen(key) == 0) return HASH_TABLE_INSERT_EMPTY_KEY_ERROR_CODE;
@@ -88,8 +88,8 @@ int insert(hashTable* table, char* key, char* value) {
     /* setting key and value for hash table item */
     keyLength = strlen(key);
     valueLength = strlen(value);
-    last->key = (char*) malloc(keyLength);
-    last->value = (char*) malloc(valueLength);
+    last->key = (char *) malloc(keyLength);
+    last->value = (char *) malloc(valueLength);
 
     if (last->key == NULL || last->value == NULL) {
         fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
@@ -103,7 +103,7 @@ int insert(hashTable* table, char* key, char* value) {
     return 1;
 }
 
-int contains_key(hashTable* table, char* key) {
+int contains_key(hashTable *table, char *key) {
     hashTableItem *current;
     int idx = calculate_hash(key, table->size);
     if (table->items[idx] == NULL) return 0;
@@ -119,7 +119,7 @@ int contains_key(hashTable* table, char* key) {
     return 0;
 }
 
-int change_value(hashTable* table, char* key, char* value) {
+int change_value(hashTable *table, char *key, char *value) {
     int idx, valueLength, itemValueLength;
     hashTableItem *current;
     /* can't change value which isn't in table */
@@ -140,7 +140,7 @@ int change_value(hashTable* table, char* key, char* value) {
 
     /* if value's length is longer than item's length */
     if (valueLength > itemValueLength) {
-        current->value = (char*) realloc(current->value,
+        current->value = (char *) realloc(current->value,
                                                    valueLength);
         if (current->value == NULL) {
             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
@@ -152,7 +152,7 @@ int change_value(hashTable* table, char* key, char* value) {
         /* filling previous value with NULL */
         memset(current->value, 0, itemValueLength);
     } else if (valueLength > 0) {
-        current->value = (char*) realloc(current->value,
+        current->value = (char *) realloc(current->value,
                                          valueLength);
         if (current->value == NULL) {
             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);

@@ -13,7 +13,7 @@
 #define FILE_NOT_EXIST_ERROR_MESSAGE "The file you specified doesn't exist..\n"
 #define MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE "Memory wasn't allocated successfully.\n"
 
-
+#define UNKNOWN_COMMAND_CODE -1
 #define MOV_COMMAND_CODE 0
 #define CMP_COMMAND_CODE 1
 #define ADD_COMMAND_CODE 2
@@ -30,3 +30,21 @@
 #define JSR_COMMAND_CODE 13
 #define RTS_COMMAND_CODE 14
 #define STOP_COMMAND_CODE 15
+
+#define NUM_REGISTERS 8
+#define MAX_WORD_LENGTH 81
+#define HASH_TABLE_SIZE 100
+
+#define READ_MODE "r"
+#define WRITE_MODE "w"
+#define MACRO_KEYWORD "mcr"
+#define END_MACRO_KEYWORD "endmcr"
+
+#define DATA_STORE_COMMAND ".data"
+#define STRING_STORE_COMMAND ".string"
+
+enum macroState {
+    NOT_IN_MACRO, IN_MACRO_BODY, IN_MACRO_NAME, END_MACRO
+};
+
+extern const char *REGISTERS_NAMES[8];
