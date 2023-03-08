@@ -1,8 +1,5 @@
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 #include "functions.h"
-#define REGISTER_WORD_LEN 2
+
 char *registerss[] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
 
 void copyWord(char *source, char *target, int size) {

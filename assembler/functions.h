@@ -1,3 +1,9 @@
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define REGISTER_WORD_LEN 2
+
 void copyWord(char *source,char *target,int size);
 /* validate the number by immediate addressing format and return its size */
 int immediateAddressing(char *word);

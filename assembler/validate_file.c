@@ -1,20 +1,12 @@
-#include <stdio.h>
-#include <string.h>
-#include "input_validation.h"
-#include "../constants.h"
-#include <stdlib.h>
-#include "functions.h"
 #include "validate_file.h"
 #define MAX_LINE_SIZE 80
-int validFile(char *fileToOpen);
-int validLine(char *line);
-
 
 char *operations[] = {"mov", "cmp", "add", "sub", "lea",
                       "not", "clr", "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
                       "rts", "stop"};
 
 char *instruction_sentence[] = {".data", ".string", ".entry", ".extern"};
+
 int validFile(char *fileToOpen){
     FILE *file;
     char currentLine[MAX_LINE_SIZE];

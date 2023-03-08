@@ -1,15 +1,5 @@
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include "input_validation.h"
-#include "../constants.h"
-#include "functions.h"
 
-
-
-
-
-enum status {COMMA,NUMBER,DONE};
 int firstGroupOps(int operation, char *line) {
     int i = 0;
     int wordSize = 0;
