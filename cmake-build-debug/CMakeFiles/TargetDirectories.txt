@@ -1,0 +1,3 @@
+C:/Users/uriel/CLionProjects/Assembler/cmake-build-debug/CMakeFiles/Maman14.dir
+C:/Users/uriel/CLionProjects/Assembler/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/uriel/CLionProjects/Assembler/cmake-build-debug/CMakeFiles/rebuild_cache.dir
