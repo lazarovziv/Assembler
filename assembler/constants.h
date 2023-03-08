@@ -13,6 +13,23 @@
 #define FILE_NOT_EXIST_ERROR_MESSAGE "The file you specified doesn't exist..\n"
 #define MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE "Memory wasn't allocated successfully.\n"
 
+#define MOV_CODE 0
+#define CMP_CODE 1
+#define ADD_CODE 2
+#define SUB_CODE 3
+#define LEA_CODE 6
+#define NOT_CODE 4
+#define CLR_CODE 5
+#define INC_CODE 7
+#define DEC_CODE 8
+#define JMP_CODE 9
+#define BNE_CODE 10
+#define RED_CODE 11
+#define PRN_CODE 12
+#define JSR_CODE 13
+#define RTS_CODE 14
+#define STOP_CODE 15
+
 #define UNKNOWN_COMMAND_CODE -1
 #define MOV_COMMAND_CODE 0
 #define CMP_COMMAND_CODE 1
