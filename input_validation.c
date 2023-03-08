@@ -16,6 +16,8 @@ int firstGroupOps(int operation, char *line) {
     char *firstParameter;
     char *secondParameter;
     int copyFromMem = 0;
+    int numOfWords = 3; /* number of words to encode */
+
     /* skip whitespaces */
     while (isspace(line[i]))
         i++;
@@ -50,15 +52,18 @@ int firstGroupOps(int operation, char *line) {
         return 0;
     }
 
+    if(isLabel(firstParameter) && isLabel(secondParameter))
+        numOfWords = 2;
 
-    return 1;
+    return numOfWords;
 }
 
 int secondGroupOps(char *line, int operation) {
     int i = 0;
     int wordSize = 0;
-    char *argument;
     int copyFromMem = 0;
+    int numOfWords = 2;
+    char *argument;
     char *firstParam;
     char *secondParam;
 
@@ -88,7 +93,6 @@ int secondGroupOps(char *line, int operation) {
         case JMP_CODE:
         case BNE_CODE:
         case JSR_CODE:
-
 
             /* must jump into a label */
             if (!isLabel(argument) || line[i] != '(') {
@@ -123,9 +127,18 @@ int secondGroupOps(char *line, int operation) {
 
             /* incrementing i in order to skip the ')' */
             i++;
+
+            if(isRegister(firstParam) && isRegister(secondParam))
+                numOfWords = 3;
+            else numOfWords = 4;
+            break;
     }
 
-    return terminatedCorrectly(line, i);
+    if(!terminatedCorrectly(line, i)) {
+        /* TODO: error */
+        return 0;
+    }
+    return numOfWords ;
 }
 
 int groupOneFirstArg(char *word, int operation) {
@@ -203,6 +216,7 @@ int validData(char *line){
     char *currentNum;
     int copyFromHere;
     int numOfDigits;
+    int numOfWords = 0;
     state = NUMBER;
     /* skip whitespaces */
     while(isspace(line[i])) i++;
@@ -210,6 +224,7 @@ int validData(char *line){
     while(line[i] != '\0'){
         switch(state){
             case NUMBER:
+                numOfWords += 1;
                 copyFromHere = i;
                 while(!isspace(line[i]) && line[i] != ',' && line[i] != '\0') i++;
                 numOfDigits = i - copyFromHere;
@@ -243,7 +258,7 @@ int validData(char *line){
                 return 1;
         }
     }
-    return 1;
+    return numOfWords;
 }
 
 int validString(char *line){
@@ -254,7 +269,7 @@ int validString(char *line){
 
     if(line[i] != '"' || line[finalChar] != '"')
         return 0;
-    return 1;
+    return strlen(&line[i]) - 2;
 }
 
 int validEntryOrExtern(char *line){
