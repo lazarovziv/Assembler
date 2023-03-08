@@ -3,6 +3,7 @@
 int deploy_macros(int argc, char *argv[]) {
     int numOfFiles = argc - 1;
     int i, j;
+    int longestMacroBodyLength = -1;
     /* files received from program arguments */
     FILE **readFiles = (FILE**) malloc(sizeof(FILE*) * numOfFiles);
     /* files to write and deploy the macros read from readFiles */
@@ -71,7 +72,10 @@ int deploy_macros(int argc, char *argv[]) {
     }
 
     for (i = 0; i < numOfFiles; i++) {
-        if (!read_macros_from_file(readFiles[i], tables[i])) return MAIN_ERROR_CODE;
+        calculate_longest_macro_body(readFiles[i], &longestMacroBodyLength);
+        /* going back to start of readFile to reiterate it for writing */
+        rewind(readFiles[i]);
+        if (!read_macros_from_file(readFiles[i], tables[i], &longestMacroBodyLength)) return MAIN_ERROR_CODE;
         /* going back to start of readFile to reiterate it for writing */
         rewind(readFiles[i]);
         write_macros_to_file(readFiles[i], writeFiles[i], tables[i]);
@@ -92,13 +96,14 @@ int deploy_macros(int argc, char *argv[]) {
     return 1;
 }
 
-int read_macros_from_file(FILE* file, hashTable *table) {
+int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
     int i, j, start, end;
-    int currentMacroBodyLength = 0, endMacro = 1;
-    int macroBodyMaxLength = -1, macroNameMaxLength = -1;
+    int maxMacroBodyLength = *longestMacroBody, endMacro = 1;
+    int macroNameMaxLength = -1;
     int tokenLength, currentLineLength = -1, insertResultCode;
     char *token;
-    char *macroName = NULL, *macroBody = NULL;
+    char *macroName = NULL;
+    char macroBody[maxMacroBodyLength];
     enum macroState macroStatus;
     char currentLine[MAX_WORD_LENGTH];
     char tempLine[MAX_WORD_LENGTH];
@@ -163,29 +168,17 @@ int read_macros_from_file(FILE* file, hashTable *table) {
                 if (insertResultCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                     fprintf(stderr, "Macro %s:\n%s",
                             macroName, MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
-                    free(macroBody);
                     free(macroName);
                     return MACRO_ALREADY_DEFINED_ERROR_CODE;
                 } /* TODO: add more errors */
 
                 memset(macroName, 0, macroNameMaxLength);
-                memset(macroBody, 0, macroBodyMaxLength);
+                memset(macroBody, 0, maxMacroBodyLength);
                 memset(currentLine, 0, MAX_WORD_LENGTH);
                 memset(tempLine, 0, MAX_WORD_LENGTH);
                 memset(cutCurrentLine, 0, MAX_WORD_LENGTH);
-                currentMacroBodyLength = 0;
                 endMacro = 1;
                 continue;
-            }
-
-            currentMacroBodyLength += currentLineLength;
-
-            if (macroBodyMaxLength < currentMacroBodyLength) {
-                macroBodyMaxLength = currentMacroBodyLength;
-                /* if uninitialized */
-                if (macroBody == NULL) macroBody = (char *) malloc(macroBodyMaxLength);
-                    /* needs to reallocate */
-                else macroBody = (char *) realloc(macroBody, macroBodyMaxLength);
             }
 
             cutCurrentLine[i-1] = '\n';
@@ -199,7 +192,6 @@ int read_macros_from_file(FILE* file, hashTable *table) {
     }
 
     free(macroName);
-    free(macroBody);
 
     return 1;
 }
@@ -307,4 +299,82 @@ int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
     }
 
     return 1;
+}
+
+void calculate_longest_macro_body(FILE *file, int *longest) {
+    int i, j, start, end;
+    int currentMacroBodyLength = 0, endMacro = 1;
+    int currentLineLength;
+    char *token;
+    enum macroState macroStatus;
+    char currentLine[MAX_WORD_LENGTH];
+    char tempLine[MAX_WORD_LENGTH];
+    char cutCurrentLine[MAX_WORD_LENGTH];
+
+    macroStatus = NOT_IN_MACRO;
+
+    while (fgets(currentLine, MAX_WORD_LENGTH, file) != NULL) {
+        currentLineLength = strlen(currentLine);
+        start = 0, end = currentLineLength-1;
+        for (; isspace(currentLine[start]); start++);
+        for (; isspace(currentLine[end]); end--);
+        if (start >= end) continue;
+        for (i = start; i <= end; i++) cutCurrentLine[i-start] = currentLine[i];
+
+        if (strcmp(currentLine, "\n") == 0) continue;
+
+        if (macroStatus == NOT_IN_MACRO) {
+            strcpy(tempLine, currentLine);
+            token = strtok(tempLine, " \t");
+
+            while (token != NULL) {
+                if (strcmp(token, MACRO_KEYWORD) == 0) {
+                    macroStatus = IN_MACRO_NAME;
+                    token = strtok(NULL, " \t");
+                    continue;
+                }
+                /* reading macro name and changing to macro body state */
+                if (macroStatus == IN_MACRO_NAME) {
+                    macroStatus = IN_MACRO_BODY;
+                }
+                token = strtok(NULL, " \t");
+            }
+
+            memset(currentLine, 0, MAX_WORD_LENGTH);
+            memset(tempLine, 0, MAX_WORD_LENGTH);
+            memset(cutCurrentLine, 0, MAX_WORD_LENGTH);
+            continue;
+        }
+
+        /* reading macro body */
+        if (macroStatus == IN_MACRO_BODY) {
+            if (strlen(cutCurrentLine) != strlen(END_MACRO_KEYWORD)) endMacro = 0;
+            else {
+                for (j = 0; j < end-start+1; j++) {
+                    if (cutCurrentLine[j] != END_MACRO_KEYWORD[j]) endMacro = 0;
+                }
+            }
+
+            if (endMacro) {
+                macroStatus = NOT_IN_MACRO;
+                memset(currentLine, 0, MAX_WORD_LENGTH);
+                memset(tempLine, 0, MAX_WORD_LENGTH);
+                memset(cutCurrentLine, 0, MAX_WORD_LENGTH);
+                currentMacroBodyLength = 0;
+                endMacro = 1;
+                continue;
+            }
+
+            currentMacroBodyLength += currentLineLength;
+
+            if (*longest < currentMacroBodyLength) {
+                *longest = currentMacroBodyLength;
+            }
+        }
+
+        memset(currentLine, 0, MAX_WORD_LENGTH);
+        memset(tempLine, 0, MAX_WORD_LENGTH);
+        memset(cutCurrentLine, 0, MAX_WORD_LENGTH);
+        endMacro = 1;
+    }
 }
