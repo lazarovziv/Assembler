@@ -1,6 +1,3 @@
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include "constants.h"
 #include "functions.h"
 
