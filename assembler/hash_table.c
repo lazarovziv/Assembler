@@ -165,3 +165,118 @@ int change_value(hashTable *table, char *key, char *value) {
     strcpy(current->value, value);
     return 1;
 }
+
+int get_value_int(hashTableInt *table, char *key) {
+    int idx;
+    hashTableIntItem *current;
+
+    if (!contains_key_int(table, key)) {
+        fprintf(stderr, HASH_TABLE_KEY_DOESNT_EXIST_ERROR_MESSAGE);
+        return 0; /* retrieval of value was unsuccessful */
+    }
+
+    idx = calculate_hash(key, table->size);
+    current = table->items[idx];
+
+    if (strcmp(key, table->items[idx]->key) == 0) return table->items[idx]->value;
+    /* continue through the linked list */
+    while (current) {
+        if (strcmp(key, current->key) == 0) return current->value;
+        current = current->next;
+    }
+
+    return 0;
+}
+
+int insert_int(hashTableInt *table, char *key, int value) {
+    int idx, keyLength;
+    hashTableIntItem *current, *last;
+    if (strlen(key) == 0) return HASH_TABLE_INSERT_EMPTY_KEY_ERROR_CODE;
+    if (value == -1) return HASH_TABLE_INSERT_EMPTY_VALUE_ERROR_CODE;
+    /* before calculating hash, checking if key exists */
+    if (contains_key_int(table, key)) return HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE;
+
+    idx = calculate_hash(key, table->size);
+    last = (hashTableIntItem*) malloc(sizeof(hashTableIntItem));
+
+    /* if memory allocation was unsuccessful */
+    if (last == NULL) {
+        fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+        return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+    }
+
+    /* if idx is not taken */
+    if (table->items[idx] == NULL) table->items[idx] = last;
+    else {
+        current = table->items[idx];
+        while (current->next != NULL) current = current->next;
+        current->next = last;
+    }
+
+    /* setting key and value for hash table item */
+    keyLength = strlen(key);
+    last->key = (char *) malloc(keyLength);
+
+    if (last->key == NULL) {
+        fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+        return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+    }
+
+    strcpy(last->key, key);
+    last->value = value;
+
+    /* everything went fine */
+    return 1;
+}
+
+int contains_key_int(hashTableInt *table, char *key) {
+    hashTableIntItem *current;
+    int idx = calculate_hash(key, table->size);
+    if (table->items[idx] == NULL) return 0;
+    current = table->items[idx];
+
+    if (strcmp(current->key, key) == 0) return 1;
+    current = current->next;
+
+    while (current) {
+        if (strcmp(current->key, key) == 0) return 1;
+        current = current->next;
+    }
+    return 0;
+}
+
+int change_value_int(hashTableInt *table, char *key, int value) {
+    int idx;
+    hashTableIntItem *current;
+    /* can't change value which isn't in table */
+    if (!contains_key_int(table, key)) {
+        fprintf(stderr, HASH_TABLE_KEY_DOESNT_EXIST_ERROR_MESSAGE);
+        return HASH_TABLE_KEY_DOESNT_EXIST_ERROR_CODE;
+    }
+
+    idx = calculate_hash(key, table->size);
+    current = table->items[idx];
+    while (current) {
+        if (strcmp(current->key, key) == 0) break;
+        current = current->next;
+    }
+
+    /* copying value to item */
+    current->value = value;
+    return 1;
+}
+
+int init_hash_table_int(hashTableInt *table, int size) {
+    int i;
+    if (!table) return 0;
+    table->items = (hashTableIntItem **) malloc(sizeof(hashTableIntItem *) * size);
+
+    if (table->items == NULL) return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+    table->size = size;
+
+    for (i = 0; i < table->size; i++) {
+        table->items[i] = NULL;
+    }
+    /* if memory allocated successfully */
+    return 1;
+}
