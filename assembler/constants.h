@@ -61,6 +61,7 @@
 
 #define DATA_STORE_COMMAND ".data"
 #define STRING_STORE_COMMAND ".string"
+#define STRING_STORE_COMMAND_LENGTH 7
 
 enum macroState {
     NOT_IN_MACRO, IN_MACRO_BODY, IN_MACRO_NAME, END_MACRO

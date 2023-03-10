@@ -1,10 +1,13 @@
 #include "encoder.h"
+#include "validate_file.h"
 
 const char *REGISTERS_NAMES[] = {
         "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8" };
 
 int first_scan(FILE *file, hashTable *table, int *IC, int *DC) {
     int i, j;
+    /* flag whether to encode currentLine of not */
+    int encodeLine = 1;
     /* counting starts from 1 */
     int lineNum = 0, lineNumTemp;
     /* for counting num of digits */
@@ -13,7 +16,7 @@ int first_scan(FILE *file, hashTable *table, int *IC, int *DC) {
     char currentLine[MAX_WORD_LENGTH];
     /* label to store in symbol's table (as key) */
     char *labelName = NULL;
-    char storeDataString[strlen(STRING_STORE_COMMAND)]; /* strlen(".string") = 7 */
+    char storeDataString[STRING_STORE_COMMAND_LENGTH]; /* strlen(".string") = 7 */
     /* label's row in file to store in symbol's table (as value)  */
     char *labelRow = NULL;
     int currentLabelLength, maxLabelLength = -1;
@@ -27,13 +30,20 @@ int first_scan(FILE *file, hashTable *table, int *IC, int *DC) {
     int L;
 
     while (fgets(currentLine, MAX_WORD_LENGTH, file) != NULL) {
-        L = 0;
+        L = validLine(currentLine);
+        printf("L: %d\n", L);
         lineNum++;
         lineNumDigitCounter = 0;
         currentLabelLength = 0;
 
+        if (!L) {
+            /* TODO: print error */
+            printf("invalid!\n");
+            continue;
+        }
+
         /* no label declared */
-        if (!strstr(currentLine, ":")) continue;
+        /*if (!strstr(currentLine, ":")) continue;*/
 
         for (i = 0; isspace(currentLine[i]); i++);
         /* if a label is declared */
@@ -57,7 +67,10 @@ int first_scan(FILE *file, hashTable *table, int *IC, int *DC) {
         strncpy(labelName, &currentLine[i-currentLabelLength], currentLabelLength);
 
         /* skipping whitespaces after colons */
-        for (i = i+1; isspace(currentLine[i]); i++);
+        /*for (i = i+1; isspace(currentLine[i]); i++);*/
+
+        /* skipping colon and space */
+        i += 2;
 
         /* .data or .string */
         if (currentLine[i] == '.') {
@@ -123,6 +136,8 @@ int first_scan(FILE *file, hashTable *table, int *IC, int *DC) {
                 }
             }
 
+            (*IC) += L;
+
             memset(labelName, 0, maxLabelLength);
             memset(labelRow, 0, lineNumDigitCounter);
             memset(currentLine, 0, MAX_WORD_LENGTH);
@@ -133,13 +148,13 @@ int first_scan(FILE *file, hashTable *table, int *IC, int *DC) {
         /* not a declaration of a .data or .string (incrementing IC) can be a regular command (i.e: LOOP: mov #2, r4) */
         currentLabelCommandCode = command_code(&currentLine[i]);
 
-        encode_command(&currentLine[i], currentLabelCommandCode, &firstAddressingType, &secondAddressingType);
-
         /* TODO: handle extern/entry commands */
 
         memset(labelName, 0, maxLabelLength);
         memset(labelRow, 0, lineNumDigitCounter);
         memset(currentLine, 0, MAX_WORD_LENGTH);
+
+        (*IC) += L;
     }
 
     free(labelName);
@@ -148,19 +163,19 @@ int first_scan(FILE *file, hashTable *table, int *IC, int *DC) {
 }
 
 int encode_mov_command(char *command, enum addressingType *first, enum addressingType *second) {
-    int i;
+    int i = -1;
     int tempI;
     float tempF;
     /* index in command where each parameter starts */
     int firstParamIdx, secondParamIdx;
     /* registers' number */
-    int firstRegisterIdx, secondRegisterIdx;
+    int firstRegisterIdx = -1, secondRegisterIdx = -1;
     /* for storing parameters' values */
-    void *firstValue, *secondValue;
+    void *firstValue = NULL, *secondValue = NULL;
     /* identifying addressing type with first symbol (./#/etc.) */
     char firstParamSymbol, secondParamSymbol;
     /* each parameter's substring */
-    char *firstParamString, *secondParamString;
+    char *firstParamString = NULL, *secondParamString = NULL;
     int isFirstFloat = 0;
 
     firstParamIdx = strlen("mov ");
@@ -306,28 +321,4 @@ int is_register(char *string) {
         if (strcmp(REGISTERS_NAMES[i], string) == 0) return i+1;
     }
     return 0;
-}
-
-/* mov #-1, r2 */
-void encode_command(char *command, int commandCode) {
-    int i;
-    /* index in command where each parameter starts */
-    int firstParamIdx, secondParamIdx;
-    /* number of registers */
-    int firstRegisterIdx, secondRegisterIdx;
-    /* identifying addressing type with first symbol (./#/etc.) */
-    char firstParamSymbol, secondParamSymbol;
-    /* each parameter's substring */
-    char *firstParamString, *secondParamString;
-    /* addressing type for each parameter */
-    enum addressingType firstAddressingType, secondAddressingType;
-
-    switch (commandCode) {
-        case MOV_COMMAND_CODE: {
-
-            break;
-        }
-    }
-
-    /* TODO: handle all possible addressing pairs */
 }

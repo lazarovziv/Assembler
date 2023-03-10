@@ -172,7 +172,7 @@ int groupOneSecondArg(char *word, int operation) {
     } else if (strlen(word) == 0) {
         /* TODO: missing parameter */
         return 0;
-    } else if (operation == CMP_CODE && word[firstCharacter] == '#' && immediateAddressing(word)) {
+    } else if (operation == CMP_CODE && word[(int) firstCharacter] == '#' && immediateAddressing(word)) {
 
         /* TODO: error invalid number */
         return 0;

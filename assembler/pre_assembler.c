@@ -103,13 +103,20 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
     int tokenLength, currentLineLength = -1, insertResultCode;
     char *token;
     char *macroName = NULL;
-    char macroBody[maxMacroBodyLength];
+    char *macroBody;
     enum macroState macroStatus;
     char currentLine[MAX_WORD_LENGTH];
     char tempLine[MAX_WORD_LENGTH];
     char cutCurrentLine[MAX_WORD_LENGTH];
 
     macroStatus = NOT_IN_MACRO;
+
+    macroBody = (char *) malloc(maxMacroBodyLength);
+
+    if (macroBody == NULL) {
+        fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+        return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+    }
 
     while (fgets(currentLine, MAX_WORD_LENGTH, file) != NULL) {
         currentLineLength = strlen(currentLine);
