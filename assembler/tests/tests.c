@@ -30,6 +30,27 @@ void print_table(hashTable *table) {
     printf("\n");
 }
 
+void print_table_int(hashTableInt *table) {
+    int i, step;
+    hashTableIntItem *current;
+    for (i = 0; i < table->size; i++) {
+        if (table->items[i]) {
+            current = table->items[i];
+            step = 0;
+            printf("i: %d\n", i);
+            while (current) {
+                printf("step: %d\n", step);
+                printf("key (length %lu): %s\n", strlen(current->key), current->key);
+                printf("value:\n%d\n", current->value);
+                current = current->next;
+                step++;
+            }
+            printf("\n");
+        }
+    }
+    printf("\n");
+}
+
 int test_insert(hashTable *table) {
     char k;
     char key[6] = "key";
@@ -56,6 +77,34 @@ int test_change_value(hashTable *table) {
     char key[] = "key14";
     char value[] = "changed";
     if (change_value(table, key, value)) print_table(table);
+
+    return 0;
+}
+
+int test_change_value_int(hashTableInt *table) {
+    char key[] = "key14";
+    int value = 18;
+    if (change_value_int(table, key, value)) print_table_int(table);
+}
+
+int test_insert_int(hashTableInt *table) {
+    char k;
+    char key[6] = "key";
+    int x = 16;
+    for (k = 0; k < 15; k++) {
+        if (k <= 9) {
+            key[3] = k + 48;
+            key[4] = '\0';
+            key[5] = '\0';
+        } else {
+            key[3] = k/10 + 48;
+            key[4] = k%10 + 48;
+            key[5] = '\0';
+        }
+        insert_int(table, key, x);
+    }
+
+    print_table_int(table);
 
     return 0;
 }
@@ -191,11 +240,16 @@ void test_first_scan() {
 
     first_scan(file, table, &IC, &DC);
 
-    print_table(table);
+    printf("DC: %d\nIC: %d\n", DC, IC);
 }
 
 int main() {
-    test_first_scan();
+    hashTableInt *table = (hashTableInt *) malloc(sizeof(hashTableInt));
+    init_hash_table_int(table, 10);
+    test_insert_int(table);
+    printf("--------------------------\n");
+    test_change_value_int(table);
+
 
     return 0;
 }
