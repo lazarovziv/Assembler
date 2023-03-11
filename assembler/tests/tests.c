@@ -2,12 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../encoder.h"
-
-void test_encode_mov() {
-    char *command = "mov r5, r2";
-    enum addressingType first, second;
-    encode_mov_command(command, &first, &second);
-}
+#include "../pre_assembler.h"
 
 void print_table(hashTable *table) {
     int i, step;
@@ -20,7 +15,7 @@ void print_table(hashTable *table) {
             while (current) {
                 printf("step: %d\n", step);
                 printf("key (length %lu): %s\n", strlen(current->key), current->key);
-                printf("value:\n%s\n", current->value);
+                printf("value:\n%s", current->value);
                 current = current->next;
                 step++;
             }
@@ -109,146 +104,46 @@ int test_insert_int(hashTableInt *table) {
     return 0;
 }
 
-int read_from_file(FILE* file, hashTable *table) {
-    int i, j, start, end;
-    int currentMacroBodyLength = 0, endMacro = 1;
-    int macroBodyMaxLength = -1, macroNameMaxLength = -1;
-    int tokenLength, currentLineLength = -1, insertResultCode;
-    char *token;
-    char *macroName = NULL, *macroBody = NULL;
-    enum macroState macroStatus;
-    char currentLine[MAX_WORD_LENGTH];
-    char tempLine[MAX_WORD_LENGTH];
-    char cutCurrentLine[MAX_WORD_LENGTH];
-
-    macroStatus = NOT_IN_MACRO;
-
-    while (fgets(currentLine, MAX_WORD_LENGTH, file) != NULL) {
-        currentLineLength = strlen(currentLine);
-        start = 0, end = currentLineLength-1;
-        for (; isspace(currentLine[start]); start++);
-        for (; isspace(currentLine[end]); end--);
-        if (start >= end) continue;
-        for (i = start; i <= end; i++) cutCurrentLine[i-start] = currentLine[i];
-
-        if (strcmp(currentLine, "\n") == 0) continue;
-
-        if (macroStatus == NOT_IN_MACRO) {
-            strcpy(tempLine, currentLine);
-            token = strtok(tempLine, " \t");
-
-            while (token != NULL) {
-                tokenLength = strlen(token);
-                if (strcmp(token, MACRO_KEYWORD) == 0) {
-                    macroStatus = IN_MACRO_NAME;
-                    token = strtok(NULL, " \t");
-                    continue;
-                }
-                /* reading macro name and changing to macro body state */
-                if (macroStatus == IN_MACRO_NAME) {
-                    if (macroNameMaxLength < tokenLength) {
-                        macroNameMaxLength = tokenLength;
-                        if (macroName == NULL) macroName = (char *) malloc(macroNameMaxLength);
-                        else macroName = (char *) realloc(macroName, macroNameMaxLength);
-                    }
-                    /* setting macroName */
-                    strcpy(macroName, token);
-                    macroStatus = IN_MACRO_BODY;
-                }
-                token = strtok(NULL, " \t");
-            }
-
-            memset(currentLine, 0, MAX_WORD_LENGTH);
-            memset(tempLine, 0, MAX_WORD_LENGTH);
-            memset(cutCurrentLine, 0, MAX_WORD_LENGTH);
-            continue;
-        }
-
-        /* reading macro body */
-        if (macroStatus == IN_MACRO_BODY) {
-            if (strlen(cutCurrentLine) != strlen(END_MACRO_KEYWORD)) endMacro = 0;
-            else {
-                for (j = 0; j < end-start+1; j++) {
-                    if (cutCurrentLine[j] != END_MACRO_KEYWORD[j]) endMacro = 0;
-                }
-            }
-            if (endMacro) {
-                macroStatus = NOT_IN_MACRO;
-                macroName[strlen(macroName)-1] = '\0';
-                insertResultCode = insert(table, macroName, macroBody);
-                /* error handling */
-                if (insertResultCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
-                    fprintf(stderr, "Macro %s:\n%s",
-                            macroName, MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
-                    free(macroBody);
-                    free(macroName);
-                    return MACRO_ALREADY_DEFINED_ERROR_CODE;
-                } /* TODO: add more errors */
-
-                memset(macroName, 0, macroNameMaxLength);
-                memset(macroBody, 0, macroBodyMaxLength);
-                memset(currentLine, 0, MAX_WORD_LENGTH);
-                memset(tempLine, 0, MAX_WORD_LENGTH);
-                memset(cutCurrentLine, 0, MAX_WORD_LENGTH);
-                currentMacroBodyLength = 0;
-                endMacro = 1;
-                continue;
-            }
-
-            currentMacroBodyLength += currentLineLength;
-
-            if (macroBodyMaxLength < currentMacroBodyLength) {
-                macroBodyMaxLength = currentMacroBodyLength;
-                /* if uninitialized */
-                if (macroBody == NULL) macroBody = (char *) malloc(macroBodyMaxLength);
-                /* needs to reallocate */
-                else macroBody = (char *) realloc(macroBody, macroBodyMaxLength);
-            }
-
-            cutCurrentLine[i-1] = '\n';
-            strcat(macroBody, cutCurrentLine);
-        }
-
-        memset(currentLine, 0, MAX_WORD_LENGTH);
-        memset(tempLine, 0, MAX_WORD_LENGTH);
-        memset(cutCurrentLine, 0, MAX_WORD_LENGTH);
-        endMacro = 1;
-    }
-
-    free(macroName);
-    free(macroBody);
-
-    return 1;
-}
-
 void test_read_from_file() {
+    int longest = -1;
     FILE *file = fopen("../x.as", "r");
     hashTable *table = (hashTable *) malloc(sizeof(hashTable));
     init_hash_table(table, HASH_TABLE_SIZE/10);
 
-    read_from_file(file, table);
+    calculate_longest_macro_body(file, &longest);
+    printf("longest: %d\n", longest);
+    rewind(file);
+    read_macros_from_file(file, table, &longest);
 
     print_table(table);
 }
 
 void test_first_scan() {
-    int IC = 100, DC = 100;
+    int IC = 0, DC = 0;
     FILE *file = fopen("y.as", READ_MODE);
+    FILE *writeFile = fopen("y.ob", WRITE_MODE);
 
-    hashTable *table = (hashTable *) malloc(sizeof(hashTable));
-    init_hash_table(table, 10);
+    hashTableInt *table = (hashTableInt *) malloc(sizeof(hashTable));
+    init_hash_table_int(table, 10);
 
-    first_scan(file, table, &IC, &DC);
+    first_scan(file, writeFile, table, &IC, &DC);
 
     printf("DC: %d\nIC: %d\n", DC, IC);
+
+    print_table_int(table);
+
 }
 
 int main() {
-    hashTableInt *table = (hashTableInt *) malloc(sizeof(hashTableInt));
+    /*hashTableInt *table = (hashTableInt *) malloc(sizeof(hashTableInt));
     init_hash_table_int(table, 10);
     test_insert_int(table);
     printf("--------------------------\n");
-    test_change_value_int(table);
+    test_change_value_int(table);*/
+
+    /*test_read_from_file();*/
+
+    test_first_scan();
 
 
     return 0;
