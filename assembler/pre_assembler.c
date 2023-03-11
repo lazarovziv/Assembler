@@ -36,7 +36,7 @@ int deploy_macros(int argc, char *argv[]) {
         strcat(currentFileName, filePostfix);
 
         strcpy(currentFileNameWrite, argv[i]);
-        /* adding "_w.as" postfix */
+        /* adding ".am" postfix */
         strcat(currentFileNameWrite, fileWritePostfix);
 
         /* trying to open file to read macros from */
@@ -79,6 +79,7 @@ int deploy_macros(int argc, char *argv[]) {
         /* going back to start of readFile to reiterate it for writing */
         rewind(readFiles[i]);
         write_macros_to_file(readFiles[i], writeFiles[i], tables[i]);
+        longestMacroBodyLength = -1;
     }
 
     /* freeing all file and hash tables separately */
@@ -117,6 +118,9 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
         fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
         return MEMORY_NOT_ALLOCATED_ERROR_CODE;
     }
+
+    /* resetting macroBody */
+    for (i = 0; i < maxMacroBodyLength; i++) macroBody[i] = '\0';
 
     while (fgets(currentLine, MAX_WORD_LENGTH, file) != NULL) {
         currentLineLength = strlen(currentLine);
@@ -199,6 +203,7 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
     }
 
     free(macroName);
+    free(macroBody);
 
     return 1;
 }

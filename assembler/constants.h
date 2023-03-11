@@ -15,6 +15,7 @@
 #define FILE_NOT_EXIST_ERROR_MESSAGE "The file you specified doesn't exist..\n"
 #define MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE "Memory wasn't allocated successfully.\n"
 
+#define UNKNOWN_CODE -1
 #define MOV_CODE 0
 #define CMP_CODE 1
 #define ADD_CODE 2
@@ -32,27 +33,24 @@
 #define RTS_CODE 14
 #define STOP_CODE 15
 
-#define UNKNOWN_COMMAND_CODE -1
-#define MOV_COMMAND_CODE 0
-#define CMP_COMMAND_CODE 1
-#define ADD_COMMAND_CODE 2
-#define SUB_COMMAND_CODE 3
-#define NOT_COMMAND_CODE 4
-#define CLR_COMMAND_CODE 5
-#define LEA_COMMAND_CODE 6
-#define INC_COMMAND_CODE 7
-#define DEC_COMMAND_CODE 8
-#define JMP_COMMAND_CODE 9
-#define BNE_COMMAND_CODE 10
-#define RED_COMMAND_CODE 11
-#define PRN_COMMAND_CODE 12
-#define JSR_COMMAND_CODE 13
-#define RTS_COMMAND_CODE 14
-#define STOP_COMMAND_CODE 15
-
 #define NUM_REGISTERS 8
 #define MAX_WORD_LENGTH 81
 #define HASH_TABLE_SIZE 100
+#define NUM_BITS 14
+#define MAX_SHORT_VALUE 32768
+
+#define SHIFTS_FOR_DEST 2
+#define SHIFTS_FOR_SRC 4
+#define SHIFTS_FOR_OPCODE 6
+#define SHIFTS_FOR_SECOND_PARAM 10
+#define SHIFTS_FOR_FIRST_PARAM 12
+#define SHIFTS_FOR_FIRST_REGISTER 8
+#define SHIFTS_FOR_SECOND_REGISTER 2
+
+/* E,R,A operands */
+#define A 0
+#define E 1
+#define R 2
 
 #define READ_MODE "r"
 #define WRITE_MODE "w"
