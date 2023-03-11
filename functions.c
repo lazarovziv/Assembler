@@ -2,8 +2,14 @@
 #include <string.h>
 #include <ctype.h>
 #include "functions.h"
+#include "errors.h"
 #define REGISTER_WORD_LEN 2
-char *registerss[] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
+char *registers[] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
+char *operations[] = {"mov", "cmp", "add", "sub", "lea",
+                      "not", "clr", "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
+                      "rts", "stop"};
+
+char *instruction_sentence[] = {".data", ".string", ".entry", ".extern"};
 
 void copyWord(char *source, char *target, int size) {
     memcpy(target, source, size);
@@ -16,6 +22,7 @@ int immediateAddressing(char *word) {
         return 0;
     if (!isdigit(word[index]) && word[index] != '+' && word[index] != '-' ) {
         /* TODO: error */
+        errors(10);
         return 0;
     }
     index++; /* skip ahead to the number */
@@ -44,20 +51,51 @@ int terminatedCorrectly(char *line, int index) {
     return line[i] == '\0';
 }
 
-int isLabel(char *line) {
+int isLabel(char *line,int firstWordInLine) {
     int i;
     char firstChar = line[0];
 
+
+
+    for(i = 0;i < sizeof(operations) / sizeof(char*); i++){
+        if(strcmp(line, operations[i]) == 0){
+            /* TODO: error label is named as an operation */
+            return 0;
+        }
+    }
+
+
+    for(i = 0;i < sizeof(instruction_sentence) / sizeof(char*); i++){
+        if(strcmp(line, instruction_sentence[i]) == 0){
+            /* TODO: error label is named as an instruction */
+            return 0;
+        }
+    }
+
+    if(!isalpha(firstChar)) {
+        /* TODO: error first character isnt alphabet */
+        errors(0);
+        return 0;
+    }
+
     for (i = 0; i < strlen(line); i++) {
-        if (!isalpha(line[i]) && !isdigit(line[i]) && line[i] != ',') {
+        if(firstWordInLine && i == strlen(line) - 1){
+            /* label is defind as the first word in line so it need to end with : */
+            return line[i] == ':';
+        }
+        else if (!isalpha(line[i]) && !isdigit(line[i])) {
             return 0;
         }
     }
 
     if(firstChar == 'r'){
         for(i = 1;i < strlen(line);i++){
-            /* if we found out that its not a register */
-            if(!isdigit(line[i]))
+            if(firstWordInLine && i == strlen(line) - 1){
+                /* label is defind as the first word in line so it need to end with : */
+                return line[i] == ':';
+            }
+                /* if we found out that its not a register */
+            else if(!isdigit(line[i]))
                 break;
         }
 
@@ -76,10 +114,11 @@ int isRegister(char *line) {
     int wordSize = strlen(line);
     reg = (char*)malloc(sizeof(char*) * wordSize);
     copyWord(line,reg,wordSize);
-    for(i = 0;i < sizeof(registerss) / sizeof(char *);i++){
-        if(strcmp(registerss[i],reg) == 0)
+    for(i = 0;i < sizeof(registers) / sizeof(char *);i++){
+        if(strcmp(registers[i],reg) == 0)
             return 1;
     }
+    free(reg);
     return 0;
 
 }

@@ -25,9 +25,14 @@ int firstGroupOps(int operation, char *line) {
     /* get first argument */
     copyFromMem = i;
     while (line[i] != ',' && line[i] != '\0') i++;
-    wordSize = i - copyFromMem + 1;
+    wordSize = i - copyFromMem;
     firstParameter = (char *) malloc(sizeof(char *) * wordSize);
     copyWord(&line[copyFromMem], firstParameter, wordSize);
+
+    if(line[i] != ','){
+        /* TODO: error missing comma */
+        return 0;
+    }
 
     /* get second argument */
     i++; /* skip first comma */
@@ -52,9 +57,11 @@ int firstGroupOps(int operation, char *line) {
         return 0;
     }
 
-    if(isLabel(firstParameter) && isLabel(secondParameter))
+    if(isRegister(firstParameter) && isRegister(secondParameter))
         numOfWords = 2;
 
+    free(firstParameter);
+    free(secondParameter);
     return numOfWords;
 }
 
@@ -95,7 +102,7 @@ int secondGroupOps(char *line, int operation) {
         case JSR_CODE:
 
             /* must jump into a label */
-            if (!isLabel(argument) || line[i] != '(') {
+            if (!isLabel(argument,0) || line[i] != '(') {
                 return 0;
             }
             i++; /* skip the '(' */
@@ -117,9 +124,9 @@ int secondGroupOps(char *line, int operation) {
             secondParam = (char *) malloc(sizeof(char *) * wordSize);
             copyWord(&line[copyFromMem], secondParam, wordSize);
 
-            if(!immediateAddressing(firstParam) && !isRegister(firstParam) && !isLabel(firstParam))
+            if(!immediateAddressing(firstParam) && !isRegister(firstParam) && !isLabel(firstParam,0))
                 return 0;
-            if(!immediateAddressing(secondParam) && !isRegister(secondParam) && !isLabel(secondParam))
+            if(!immediateAddressing(secondParam) && !isRegister(secondParam) && !isLabel(secondParam,0))
                 return 0;
 
             if(line[i] != ')')
@@ -138,6 +145,9 @@ int secondGroupOps(char *line, int operation) {
         /* TODO: error */
         return 0;
     }
+    free(argument);
+    free(firstParam);
+    free(secondParam);
     return numOfWords ;
 }
 
@@ -147,12 +157,12 @@ int groupOneFirstArg(char *word, int operation) {
 
 
     if (operation >= MOV_CODE && operation <= SUB_CODE) {
-
+        if(firstCharacter != '#' && !isalpha(firstCharacter))
+            return 0;
         if (firstCharacter == '#' && immediateAddressing(word) == 0) {
-
             /* TODO: error invalid number */
             return 0;
-        } else if (isalpha(firstCharacter) && !isLabel(word) && !isRegister(word)) {
+        } else if (isalpha(firstCharacter) && !isLabel(word,0) && !isRegister(word)) {
             /* not a label and not a register */
             return 0;
         }
@@ -165,10 +175,7 @@ int groupOneFirstArg(char *word, int operation) {
     }
     while (isspace(word[index]) && word[index] != '\0')
         index++;
-    if (word[index] != ',') {
-        /* TODO: error */
-        return 0;
-    }
+
     return 1;
 }
 
@@ -186,7 +193,7 @@ int groupOneSecondArg(char *word, int operation) {
 
         /* TODO: error invalid number */
         return 0;
-    } else if (!isLabel(word) && !isRegister(word)) {
+    } else if (!isLabel(word,0) && !isRegister(word)) {
         /* TODO: error */
         return 0;
     }
@@ -198,7 +205,7 @@ int groupOneSecondArg(char *word, int operation) {
 int validRegisterOrLabel(char *line) {
     if (strlen(line) == 0) {
         /* missing parameter */
-    } else if (!isLabel(line) && !isRegister(line)) {
+    } else if (!isLabel(line,0) && !isRegister(line)) {
         return 0;
     }
     return 1;
@@ -258,6 +265,7 @@ int validData(char *line){
                 return 1;
         }
     }
+    free(currentNum);
     return numOfWords;
 }
 
@@ -277,6 +285,6 @@ int validEntryOrExtern(char *line){
     /*skip whitespaces */
     while(isspace(line[i])) i++;
 
-    return isLabel(&line[i]);
+    return isLabel(&line[i],0);
 }
 
