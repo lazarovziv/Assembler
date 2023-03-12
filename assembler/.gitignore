@@ -3,3 +3,6 @@
 *.as
 *.am
 .idea
+*.ob
+*.ent
+*.ext
