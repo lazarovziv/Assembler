@@ -5,7 +5,8 @@ const char *REGISTERS_NAMES[] = {
 
 /* TODO: instead of encoding ? for labels, perhaps encode num of label occurrence in each line
  * to identify in second_scan?? */
-int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *DC) {
+int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *DC,
+               hashTableInt *entriesTable, hashTableInt *externsTable) {
     int i, j, startParamsIdx;
     /* flag whether to encode currentLine of not */
     int encodeLine = 1;
@@ -30,6 +31,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
     /* encoded string */
     char encodedString[NUM_BITS];
     int isEncodedFirst = 0, isEncodedSecond = 0, isEncodedThird = 0;
+    int isEntry, isExtern;
 
     short encodedWord = 0;
     short operationEncode, firstParamEncode, secondParamEncode, thirdEncode, srcEncode, destEncode, externEntryEncode;
@@ -38,18 +40,20 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
 
     while (fgets(currentLine, MAX_WORD_LENGTH, file) != NULL) {
         L = 0;
+        isEntry = isExtern = 0;
+        lineNum++;
         currentLine[strlen(currentLine)-1] = '\0';
         strcpy(copyCurrentLine, currentLine);
+        printf("%d) current line: %s\n", lineNum, copyCurrentLine);
         L = validLine(copyCurrentLine);
+        printf("L: %d\n", L);
         strcpy(copyCurrentLine, currentLine);
-        lineNum++;
         currentLabelLength = 0;
 
         if (!L) {
             /* TODO: print error */
             printf("Line %d invalid!\n", lineNum);
             encodeLine = 0;
-            continue;
         }
 
         if (!encodeLine) {
@@ -59,6 +63,59 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
 
         /* no label declared */
         if (!strstr(currentLine, ":")) {
+            /* labels declared as .entry/extern commands are irrelevant */
+            if (strstr(currentLine, ENTRY_COMMAND)) {
+                isEntry = 1;
+                i = strlen(ENTRY_COMMAND);
+                for (; isspace(currentLine[i]); i++); /* skip spaces */
+                for (j = i; !isspace(currentLine[j]) && currentLine[j] != '\0'; j++); /* finding label name */
+                currentLabelLength = j-i;
+                /* allocating memory */
+                if (labelName == NULL) {
+                    maxLabelLength = currentLabelLength;
+                    labelName = (char *) malloc(maxLabelLength);
+                } else if (maxLabelLength < currentLabelLength) {
+                    maxLabelLength = currentLabelLength;
+                    labelName = (char *) realloc(labelName, maxLabelLength);
+                }
+                /* memory allocation was unsuccessful */
+                if (labelName == NULL) {
+                    fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+                    return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+                }
+                /* initializing labelName */
+                strncpy(labelName, &currentLine[j-currentLabelLength], currentLabelLength);
+                labelName[currentLabelLength] = '\0';
+
+                insert_int(entriesTable, labelName, *IC);
+                continue;
+            } else if (strstr(currentLine, EXTERN_COMMAND)) {
+                isExtern = 1;
+                i = strlen(EXTERN_COMMAND);
+                for (; isspace(currentLine[i]); i++); /* skip spaces */
+                for (j = i; !isspace(currentLine[j]) && currentLine[j] != '\0'; j++); /* finding label name */
+                currentLabelLength = j-i;
+                /* allocating memory */
+                if (labelName == NULL) {
+                    maxLabelLength = currentLabelLength;
+                    labelName = (char *) malloc(maxLabelLength);
+                } else if (maxLabelLength < currentLabelLength) {
+                    maxLabelLength = currentLabelLength;
+                    labelName = (char *) realloc(labelName, maxLabelLength);
+                }
+                /* memory allocation was unsuccessful */
+                if (labelName == NULL) {
+                    fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+                    return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+                }
+                /* initializing labelName */
+                strncpy(labelName, &currentLine[j-currentLabelLength], currentLabelLength);
+                labelName[currentLabelLength] = '\0';
+
+                insert_int(externsTable, labelName, *IC);
+                continue;
+            }
+
             /* TODO: handle "regular" commands */
             for (i = 0; !isspace(currentLine[i]); i++) {
                 operationString[i] = currentLine[i];
@@ -83,7 +140,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                         if (!isEncodedFirst) {
                             if ((firstRegisterIdx = is_register(token))) {
                                 /* in first_scan setting labels as ? in .ob file (encode them in 2nd scan) */
-                            } else if (is_label(token)) fprintf(writeFile, "%s\n", "?");
+                            } else if (is_label(token)) fprintf(writeFile, "%s\n", token);
                             /* it's a number */
                             else {
                                 firstParamEncode = (short) atoi(token);
@@ -108,7 +165,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                                                      lineNum, writeFile);
                                 }
                                 /* in first_scan setting labels as ? in .ob file (encode them in 2nd scan) */
-                            } else if (is_label(token)) fprintf(writeFile, "%s\n", "?");
+                            } else if (is_label(token)) fprintf(writeFile, "%s\n", token);
                             /* it's a number */
                             else {
                                 secondParamEncode = atoi(token);
@@ -131,7 +188,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                         if (!isEncodedFirst) {
                             if ((firstRegisterIdx = is_register(token))) {
                                 /* in first_scan setting labels as ? in .ob file (encode them in 2nd scan) */
-                            } else if (is_label(token)) fprintf(writeFile, "%s\n", "?");
+                            } else if (is_label(token)) fprintf(writeFile, "%s\n", token);
                             isEncodedFirst = 1;
                         } else if (!isEncodedSecond) {
                             if ((secondRegisterIdx = is_register(token))) {
@@ -147,7 +204,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                                                      lineNum, writeFile);
                                 }
                                 /* in first_scan setting labels as ? in .ob file (encode them in 2nd scan) */
-                            } else if (is_label(token)) fprintf(writeFile, "%s\n", "?");
+                            } else if (is_label(token)) fprintf(writeFile, "%s\n", token);
                             isEncodedSecond = 1;
                         }
                         firstRegisterIdx = secondRegisterIdx = 0;
@@ -172,7 +229,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                                 write_to_ob_file(secondRegisterIdx, encodedString, lineNum, writeFile);
                                 secondRegisterIdx = 0;
                                 /* in first_scan setting labels as ? in .ob file (encode them in 2nd scan) */
-                            } else if (is_label(token)) fprintf(writeFile, "%s\n", "?");
+                            } else if (is_label(token)) fprintf(writeFile, "%s\n", token);
                             else {
                                 if (operationEncode == PRN_CODE) {
                                     /* check immediate addressing */
@@ -204,7 +261,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                                     write_to_ob_file(secondRegisterIdx, encodedString, lineNum, writeFile);
                                     secondRegisterIdx = 0;
                                     /* in first_scan setting labels as ? in .ob file (encode them in 2nd scan) */
-                                } else if (is_label(token)) fprintf(writeFile, "%s\n", "?");
+                                } else if (is_label(token)) fprintf(writeFile, "%s\n", token);
                                 isEncodedFirst = 1;
                             }
                             token = strtok(NULL, " \t\n");
@@ -224,7 +281,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                         write_to_ob_file(secondRegisterIdx, encodedString, lineNum, writeFile);
                         secondRegisterIdx = 0;
                         /* it's a label */
-                    } else fprintf(writeFile, "%s\n", "?");
+                    } else fprintf(writeFile, "%s\n", token);
 
                     /* handle parameters */
                     token = strtok(&copyCurrentLine[j], " \t,()");
@@ -232,7 +289,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                         if (!isEncodedFirst) {
                             if ((firstRegisterIdx = is_register(token))) {
                                 firstParamEncode = firstRegisterIdx;
-                            } else if (is_label(token)) fprintf(writeFile, "%s\n", "?");
+                            } else if (is_label(token)) fprintf(writeFile, "%s\n", token);
                             isEncodedFirst = 1;
                         } else if (!isEncodedSecond) {
                             if ((secondRegisterIdx = is_register(token))) {
@@ -256,7 +313,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                                     convert_to_special_binary(firstParamEncode, encodedString);
                                 }
                                 /* encode the label */
-                                fprintf(writeFile, "%s\n", "?");
+                                fprintf(writeFile, "%s\n", token);
                             }
                             isEncodedSecond = 1;
                         }
@@ -319,13 +376,15 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
             }
             storeDataString[startParamsIdx-i] = '\0';
 
-            /* insert label into hash table with DC value as value */
-            insertLabelReturnCode = insert_int(table, labelName, *DC);
+            if (!contains_key_int(entriesTable, labelName)
+                && !contains_key_int(externsTable, labelName)) {
+                insertLabelReturnCode = insert_int(table, labelName, *DC);
 
-            if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
-                fprintf(stderr, "Label %s already exists!\n", labelName);
-                free(labelName);
-                return -1; /* TODO: handle errors if label already exists */
+                if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
+                    fprintf(stderr, "Label %s already exists!\n", labelName);
+                    free(labelName);
+                    return -1; /* TODO: handle errors if label already exists */
+                }
             }
 
             startParamsIdx++; /* skip space */
@@ -354,6 +413,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                 convert_to_special_binary(0, encodedString);
                 /* writing \0 value at the end */
                 fprintf(writeFile, "%s\n", encodedString);
+                (*DC)++;
             }
 
             if (maxLabelLength != -1) memset(labelName, 0, maxLabelLength);
@@ -363,12 +423,15 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
             continue;
             /* not storing data */
         } else {
-            insertLabelReturnCode = insert_int(table, labelName, *IC);
+            if (!contains_key_int(entriesTable, labelName)
+            && !contains_key_int(externsTable, labelName)) {
+                insertLabelReturnCode = insert_int(table, labelName, *IC);
 
-            if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
-                fprintf(stderr, "Label %s already exists!\n", labelName);
-                free(labelName);
-                return -1; /* TODO: handle errors if label already exists */
+                if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
+                    fprintf(stderr, "Label %s already exists!\n", labelName);
+                    free(labelName);
+                    return -1; /* TODO: handle errors if label already exists */
+                }
             }
 
             for (startParamsIdx = 0; currentLine[startParamsIdx] != ':'; startParamsIdx++);
@@ -412,7 +475,6 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
 
         /* not a declaration of a .data or .string (incrementing IC) can be a regular command (i.e: LOOP: mov #2, r4) */
 
-        /* TODO: handle extern/entry commands */
 
         if (maxLabelLength != -1) memset(labelName, 0, maxLabelLength);
         memset(currentLine, 0, MAX_WORD_LENGTH);

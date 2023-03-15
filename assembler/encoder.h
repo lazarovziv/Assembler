@@ -6,7 +6,8 @@ enum addressingType {
     IMMEDIATE, DIRECT, JUMP, REGISTER
 };
 
-int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *DC);
+int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *DC,
+               hashTableInt *entriesTable, hashTableInt *externsTable);
 int command_code(char *command);
 int is_register(char *string);
 int is_label(char *string);

@@ -59,6 +59,8 @@
 
 #define DATA_STORE_COMMAND ".data"
 #define STRING_STORE_COMMAND ".string"
+#define ENTRY_COMMAND ".entry"
+#define EXTERN_COMMAND ".extern"
 #define STRING_STORE_COMMAND_LENGTH 7
 
 enum macroState {
