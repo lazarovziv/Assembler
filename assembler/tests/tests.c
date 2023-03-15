@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "../encoder.h"
 #include "../pre_assembler.h"
 
@@ -11,11 +10,10 @@ void print_table(hashTable *table) {
         if (table->items[i]) {
             current = table->items[i];
             step = 0;
-            printf("i: %d\n", i);
+            printf("i = %d\t", i);
             while (current) {
-                printf("step: %d\n", step);
-                printf("key (length %lu): %s\n", strlen(current->key), current->key);
-                printf("value:\n%s", current->value);
+                if (current->next) printf("%s -> ", current->key);
+                else printf("%s", current->key);
                 current = current->next;
                 step++;
             }
@@ -32,11 +30,10 @@ void print_table_int(hashTableInt *table) {
         if (table->items[i]) {
             current = table->items[i];
             step = 0;
-            printf("i: %d\n", i);
+            printf("i = %d:\t", i);
             while (current) {
-                printf("step: %d\n", step);
-                printf("key (length %lu): %s\n", strlen(current->key), current->key);
-                printf("value:\n%d\n", current->value);
+                if (current->next) printf("%s (%d) -> ", current->key, current->value);
+                else printf("%s (%d)", current->key, current->value);
                 current = current->next;
                 step++;
             }
@@ -80,6 +77,7 @@ int test_change_value_int(hashTableInt *table) {
     char key[] = "key14";
     int value = 18;
     if (change_value_int(table, key, value)) print_table_int(table);
+    return 0;
 }
 
 int test_insert_int(hashTableInt *table) {
@@ -124,24 +122,27 @@ void test_first_scan() {
     FILE *writeFile = fopen("y.ob", WRITE_MODE);
 
     hashTableInt *table = (hashTableInt *) malloc(sizeof(hashTable));
+    hashTableInt *entriesTable = (hashTableInt *) malloc(sizeof(hashTableInt));
+    hashTableInt *externsTable = (hashTableInt *) malloc(sizeof(hashTableInt));
     init_hash_table_int(table, 10);
+    init_hash_table_int(entriesTable, 10);
+    init_hash_table_int(externsTable, 10);
 
-    first_scan(file, writeFile, table, &IC, &DC);
+    first_scan(file, writeFile, table, &IC, &DC, entriesTable, externsTable);
 
     printf("DC: %d\nIC: %d\n", DC, IC);
 
     print_table_int(table);
+    print_table_int(entriesTable);
+    print_table_int(externsTable);
 
 }
 
-int main() {
-    /*hashTableInt *table = (hashTableInt *) malloc(sizeof(hashTableInt));
-    init_hash_table_int(table, 10);
-    test_insert_int(table);
-    printf("--------------------------\n");
-    test_change_value_int(table);*/
+int main(int argc, char *argv[]) {
+    hashTable *macroTable = (hashTable *) malloc((sizeof(hashTable)));
+    init_hash_table(macroTable, 10);
 
-    /*test_read_from_file();*/
+    deploy_macros(argc, argv);
 
     test_first_scan();
 
