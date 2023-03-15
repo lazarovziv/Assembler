@@ -85,8 +85,9 @@ int secondGroupOps(char *line, int operation) {
                 return 0;
             break;
         case PRN_CODE:
-            if (!validRegisterOrLabel(argument) || !immediateAddressing(argument))
+            if (!validRegisterOrLabel(argument) && !immediateAddressing(argument))
                 return 0;
+            break;
         case JMP_CODE:
         case BNE_CODE:
         case JSR_CODE:
@@ -100,7 +101,7 @@ int secondGroupOps(char *line, int operation) {
             copyFromMem = i;
             if(line[i] == '#')
                 i++;
-            while(isalpha(line[i]) || isdigit(line[i])) i++;
+            while(isalpha(line[i]) || isdigit(line[i]) || line[i] == '-' || line[i] == '+') i++;
             wordSize = i - copyFromMem;
             firstParam = (char *) malloc(sizeof(char *) * wordSize);
             copyWord(&line[copyFromMem], firstParam, wordSize);
@@ -131,6 +132,7 @@ int secondGroupOps(char *line, int operation) {
             break;
     }
 
+    while (!isspace(line[i]) && line[i] != '\0') i++;
     if(!terminatedCorrectly(line, i)) {
         /* TODO: error */
         return 0;
@@ -267,7 +269,7 @@ int validString(char *line){
 
     if(line[i] != '"' || line[finalChar] != '"')
         return 0;
-    return strlen(&line[i]) - 2;
+    return strlen(&line[i]) - 1;
 }
 
 int validEntryOrExtern(char *line){
