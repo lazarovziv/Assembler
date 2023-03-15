@@ -1,5 +1,5 @@
 run: main.o encoder.o validate_file.o input_validation.o pre_assembler.o hash_table.o functions.o errors.o
-	gcc -g -ansi -pedantic -Wall main.o encoder.o validate_file.o input_validation.o pre_assembler.o hash_table.o functions.o -o run
+	gcc -g -ansi -pedantic -Wall main.o encoder.o validate_file.o input_validation.o pre_assembler.o hash_table.o functions.o errors.o -o run
 
 main.o: main.c encoder.h pre_assembler.h
 	gcc -ansi -pedantic -Wall -c main.c
@@ -23,7 +23,7 @@ hash_table.o: hash_table.c hash_table.h constants.h
 	gcc -ansi -pedantic -Wall -c hash_table.c -o hash_table.o
 
 errors.o: errors.c errors.h
-	gcc -ansi -pedantic -Wall -c ../errors.c
+	gcc -ansi -pedantic -Wall -c errors.c
 
 clean:
 	rm *.o
