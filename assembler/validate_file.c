@@ -38,19 +38,19 @@ int validLine(char *line){
     int firstWordInLine = 1;
     copyLine = (char*)malloc(sizeof(char*) * strlen(line));
     copyWord(line,copyLine,strlen(line));
-    token = strtok(line, delimiter);
+    token = strtok(copyLine, delimiter);
 
 
     while (token != NULL) {
         for(i = 0;i < sizeof(operationss) / sizeof(char*); i++) {
             if (strcmp(token, operationss[i]) == 0) {
-                return sendToOp(copyLine,i,index);
+                return sendToOp(line,i,index);
             }
         }
 
         for(i = 0;i < sizeof(instruction_sentencee) / sizeof(char*); i++){
             if(strcmp(token, instruction_sentencee[i]) == 0)
-                return sendToInstruction(copyLine, i, index);
+                return sendToInstruction(line, i, index);
         }
 
         /* if it's a definition of a label check it */
