@@ -1,5 +1,4 @@
 #include "hash_table.h"
-#include <string.h>
 
 #define FIRST_PRIME 54059 /* a prime */
 #define SECOND_PRIME 76963 /* another prime */
@@ -24,16 +23,11 @@ unsigned int calculate_hash(char *input, int size) {
 }
 
 int init_hash_table(hashTable *table, int size) {
-    int i;
     if (!table) return 0;
-    table->items = (hashTableItem **) malloc(sizeof(hashTableItem *) * size);
+    table->items = (hashTableItem **) calloc(size, sizeof(hashTableItem *));
 
     if (table->items == NULL) return MEMORY_NOT_ALLOCATED_ERROR_CODE;
     table->size = size;
-
-    for (i = 0; i < table->size; i++) {
-        table->items[i] = NULL;
-    }
     /* if memory allocated successfully */
     return 1;
 }
@@ -69,7 +63,7 @@ int insert(hashTable *table, char *key, char *value) {
     if (contains_key(table, key)) return HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE;
 
     idx = calculate_hash(key, table->size);
-    last = (hashTableItem*) malloc(sizeof(hashTableItem));
+    last = (hashTableItem*) calloc(1, sizeof(hashTableItem));
 
     /* if memory allocation was unsuccessful */
     if (last == NULL) {
@@ -98,6 +92,9 @@ int insert(hashTable *table, char *key, char *value) {
 
     strcpy(last->key, key);
     strcpy(last->value, value);
+
+    last->key[keyLength] = '\0';
+    last->value[valueLength] = '\0';
 
     /* everything went fine */
     return 1;
@@ -197,13 +194,16 @@ int insert_int(hashTableInt *table, char *key, int value) {
     if (contains_key_int(table, key)) return HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE;
 
     idx = calculate_hash(key, table->size);
-    last = (hashTableIntItem*) malloc(sizeof(hashTableIntItem));
+    last = (hashTableIntItem*) calloc(1, sizeof(hashTableIntItem));
 
     /* if memory allocation was unsuccessful */
     if (last == NULL) {
         fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
         return MEMORY_NOT_ALLOCATED_ERROR_CODE;
     }
+
+    last->key = NULL;
+    last->value = -1;
 
     /* if idx is not taken */
     if (table->items[idx] == NULL) table->items[idx] = last;
@@ -215,7 +215,7 @@ int insert_int(hashTableInt *table, char *key, int value) {
 
     /* setting key and value for hash table item */
     keyLength = strlen(key);
-    last->key = (char *) malloc(keyLength);
+    last->key = (char *) calloc(keyLength, sizeof(char));
 
     if (last->key == NULL) {
         fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
@@ -232,13 +232,17 @@ int insert_int(hashTableInt *table, char *key, int value) {
 int contains_key_int(hashTableInt *table, char *key) {
     hashTableIntItem *current;
     int idx = calculate_hash(key, table->size);
-    if (table->items[idx] == NULL) return 0;
+
     current = table->items[idx];
+    if (current == NULL) return 0;
 
     if (strcmp(current->key, key) == 0) return 1;
-    current = current->next;
+    if (!(current = current->next)) return 0;
 
     while (current) {
+        if (!current->key) {
+            return 0;
+        }
         if (strcmp(current->key, key) == 0) return 1;
         current = current->next;
     }
@@ -267,16 +271,11 @@ int change_value_int(hashTableInt *table, char *key, int value) {
 }
 
 int init_hash_table_int(hashTableInt *table, int size) {
-    int i;
     if (!table) return 0;
-    table->items = (hashTableIntItem **) malloc(sizeof(hashTableIntItem *) * size);
+    table->items = (hashTableIntItem **) calloc(size, sizeof(hashTableIntItem *));
 
     if (table->items == NULL) return MEMORY_NOT_ALLOCATED_ERROR_CODE;
     table->size = size;
-
-    for (i = 0; i < table->size; i++) {
-        table->items[i] = NULL;
-    }
     /* if memory allocated successfully */
     return 1;
 }
