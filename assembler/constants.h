@@ -47,6 +47,11 @@
 #define SHIFTS_FOR_FIRST_REGISTER 8
 #define SHIFTS_FOR_SECOND_REGISTER 2
 
+#define IMMEDIATE_ENCODE 0
+#define DIRECT_ENCODE 1
+#define JUMP_ENCODE 2
+#define REGISTER_ENCODE 3
+
 /* E,R,A operands */
 #define A 0
 #define E 1
@@ -54,6 +59,7 @@
 
 #define READ_MODE "r"
 #define WRITE_MODE "w"
+#define READ_WRITE_MODE "r+"
 #define MACRO_KEYWORD "mcr"
 #define END_MACRO_KEYWORD "endmcr"
 

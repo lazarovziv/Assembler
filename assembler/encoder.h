@@ -8,6 +8,10 @@ enum addressingType {
 
 int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *DC,
                hashTableInt *entriesTable, hashTableInt *externsTable);
+int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *table, hashTableInt *entriesTable, hashTableInt *externsTable, int *IC);
+
+int encode_regular_command(FILE *writeFile, short operationEncode, char *line, int lineNum, char encodedString[]);
+
 int command_code(char *command);
 int is_register(char *string);
 int is_label(char *string);
