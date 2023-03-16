@@ -119,7 +119,8 @@ void test_read_from_file() {
 void test_first_scan() {
     int IC = 0, DC = 0;
     FILE *file = fopen("y.as", READ_MODE);
-    FILE *writeFile = fopen("y.ob", WRITE_MODE);
+    FILE *writeFile = fopen("y.temp_ob", WRITE_MODE);
+    FILE *writeReadFile;
 
     hashTableInt *table = (hashTableInt *) malloc(sizeof(hashTable));
     hashTableInt *entriesTable = (hashTableInt *) malloc(sizeof(hashTableInt));
@@ -136,13 +137,18 @@ void test_first_scan() {
     print_table_int(entriesTable);
     print_table_int(externsTable);
 
+    fclose(writeFile);
+    writeFile = fopen("y.temp_ob", READ_MODE);
+    writeReadFile = fopen("y.ob", WRITE_MODE);
+
+    second_scan("y.temp_ob", writeFile, writeReadFile, table, entriesTable, externsTable, &IC);
+
 }
 
-int main(int argc, char *argv[]) {
-    hashTable *macroTable = (hashTable *) malloc((sizeof(hashTable)));
-    init_hash_table(macroTable, 10);
 
-    deploy_macros(argc, argv);
+int main(int argc, char *argv[]) {
+    hashTable *macroTable = (hashTable *) malloc(sizeof(hashTable));
+    init_hash_table(macroTable, 10);
 
     test_first_scan();
 
