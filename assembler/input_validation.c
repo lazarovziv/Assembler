@@ -92,6 +92,8 @@ int secondGroupOps(char *line, int operation) {
         case BNE_CODE:
         case JSR_CODE:
 
+            if (isLabel(argument, 0) && terminatedCorrectly(line, i)) return 2;
+
             /* must jump into a label */
             if (!isLabel(argument,0) || line[i] != '(') {
                 return 0;
