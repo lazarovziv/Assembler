@@ -1,14 +1,8 @@
 #include "pre_assembler.h"
 
-int deploy_macros(int argc, char *argv[]) {
-    int numOfFiles = argc - 1;
+int deploy_macros(FILE **readFiles, FILE **writeFiles, hashTable **tables, int numOfFiles, char *argv[]) {
     int i, j;
     int longestMacroBodyLength = -1;
-    /* files received from program arguments */
-    FILE **readFiles = (FILE**) malloc(sizeof(FILE*) * numOfFiles);
-    /* files to write and deploy the macros read from readFiles */
-    FILE **writeFiles = (FILE**) malloc(sizeof(FILE*) * numOfFiles);
-    hashTable **tables = (hashTable**) malloc(sizeof(hashTable*) * numOfFiles);
 
     char *currentFileNameWrite;
     char *currentFileName;
@@ -17,11 +11,8 @@ int deploy_macros(int argc, char *argv[]) {
     const char filePostfix[] = ".as";
     const char fileWritePostfix[] = ".am";
 
-    /* no files specified */
-    if (argc == 1) return 0;
-
     /* storing all files in readFiles array */
-    for (i = 1; i < argc; i++) {
+    for (i = 1; i < numOfFiles+1; i++) {
         currentFileNameLength = strlen(argv[i]);
         currentFileName = (char *) malloc(currentFileNameLength + 4); /* adding 4 for .as postfix */
         currentFileNameWrite = (char*) malloc(currentFileNameLength + 4); /* adding 6 as adding .am postfix */
@@ -174,6 +165,8 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
             if (endMacro) {
                 macroStatus = NOT_IN_MACRO;
                 macroName[strlen(macroName)-1] = '\0';
+                macroBody[strlen(macroBody)] = '\0';
+                printf("macro %s body: %s\n", macroName, macroBody);
                 insertResultCode = insert(table, macroName, macroBody);
                 /* error handling */
                 if (insertResultCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
@@ -194,6 +187,7 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
 
             cutCurrentLine[i-1] = '\n';
             strcat(macroBody, cutCurrentLine);
+            macroBody[strlen(macroBody)-1] = '\n';
         }
 
         memset(currentLine, 0, MAX_WORD_LENGTH);
