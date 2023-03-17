@@ -1,90 +1,20 @@
 #include "pre_assembler.h"
 
-int deploy_macros(FILE **readFiles, FILE **writeFiles, hashTable **tables, int numOfFiles, char *argv[]) {
-    int i, j;
-    int longestMacroBodyLength = -1;
+int deploy_macros(FILE *readFile, FILE *writeFile, hashTable *labelTable, int *longestMacroBodyLength) {
+    calculate_longest_macro_body(readFile, longestMacroBodyLength);
+    /* going back to start of readFile to reiterate it for writing */
+    rewind(readFile);
+    if (!read_macros_from_file(readFile, labelTable, longestMacroBodyLength)) return MAIN_ERROR_CODE;
+    /* going back to start of readFile to reiterate it for writing */
+    rewind(readFile);
+    write_macros_to_file(readFile, writeFile, labelTable);
+    *longestMacroBodyLength = -1;
 
-    char *currentFileNameWrite;
-    char *currentFileName;
-    int currentFileNameLength;
+    /* freeing files and hash table */
+    fclose(readFile);
+    fclose(writeFile);
 
-    const char filePostfix[] = ".as";
-    const char fileWritePostfix[] = ".am";
-
-    /* storing all files in readFiles array */
-    for (i = 1; i < numOfFiles+1; i++) {
-        currentFileNameLength = strlen(argv[i]);
-        currentFileName = (char *) malloc(currentFileNameLength + 4); /* adding 4 for .as postfix */
-        currentFileNameWrite = (char*) malloc(currentFileNameLength + 4); /* adding 6 as adding .am postfix */
-
-        if (currentFileName == NULL || currentFileNameWrite == NULL) {
-            fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
-            return MEMORY_NOT_ALLOCATED_ERROR_CODE;
-        }
-
-        strcpy(currentFileName, argv[i]);
-        /* adding ".as" postfix */
-        strcat(currentFileName, filePostfix);
-
-        strcpy(currentFileNameWrite, argv[i]);
-        /* adding ".am" postfix */
-        strcat(currentFileNameWrite, fileWritePostfix);
-
-        /* trying to open file to read macros from */
-        if ((readFiles[i-1] = fopen(currentFileName, READ_MODE)) == NULL) {
-            fprintf(stderr, "Error trying to open file %s\n", currentFileName);
-            free(currentFileName);
-            /* free all opened files in case one doesn't exist */
-            for (j = 0; j < i; j++) fclose(readFiles[j]);
-            free(readFiles);
-            return MAIN_ERROR_CODE;
-        }
-        /* trying to open file to write to with all macros */
-        if ((writeFiles[i-1] = fopen(currentFileNameWrite, WRITE_MODE)) == NULL) {
-            fprintf(stderr, "Unable to write to file %s\n", currentFileNameWrite);
-            free(currentFileNameWrite);
-            /* free all opened files in case one doesn't exist */
-            for (j = 0; j < i; j++) fclose(writeFiles[j]);
-            free(writeFiles);
-            return MAIN_ERROR_CODE;
-        }
-
-        /* initializing table in memory for current file */
-        tables[i-1] = (hashTable*) malloc(sizeof(hashTable));
-
-        if (!init_hash_table(tables[i-1], HASH_TABLE_SIZE)) {
-            fprintf(stderr, "unsuccessful initialization of hash table.\n");
-            return MAIN_ERROR_CODE;
-        }
-
-        /* finished deploying macros on this file */
-        free(currentFileName);
-        free(currentFileNameWrite);
-    }
-
-    for (i = 0; i < numOfFiles; i++) {
-        calculate_longest_macro_body(readFiles[i], &longestMacroBodyLength);
-        /* going back to start of readFile to reiterate it for writing */
-        rewind(readFiles[i]);
-        if (!read_macros_from_file(readFiles[i], tables[i], &longestMacroBodyLength)) return MAIN_ERROR_CODE;
-        /* going back to start of readFile to reiterate it for writing */
-        rewind(readFiles[i]);
-        write_macros_to_file(readFiles[i], writeFiles[i], tables[i]);
-        longestMacroBodyLength = -1;
-    }
-
-    /* freeing all file and hash tables separately */
-    for (i = 0; i < numOfFiles; i++) {
-        fclose(readFiles[i]);
-        fclose(writeFiles[i]);
-
-        free(tables[i]);
-    }
-
-    /* freeing arrays */
-    free(readFiles);
-    free(writeFiles);
-    free(tables);
+    free(labelTable);
     return 1;
 }
 
@@ -95,7 +25,7 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
     int tokenLength, currentLineLength = -1, insertResultCode;
     char *token;
     char *macroName = NULL;
-    char *macroBody;
+    char *macroBody = NULL;
     enum macroState macroStatus;
     char currentLine[MAX_WORD_LENGTH];
     char tempLine[MAX_WORD_LENGTH];
@@ -103,11 +33,12 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
 
     macroStatus = NOT_IN_MACRO;
 
-    macroBody = (char *) malloc(maxMacroBodyLength);
-
-    if (macroBody == NULL) {
-        fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
-        return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+    if (maxMacroBodyLength > 0) {
+        macroBody = (char *) calloc(maxMacroBodyLength, sizeof(char));
+        if (macroBody == NULL) {
+            fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+            return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+        }
     }
 
     /* resetting macroBody */
@@ -166,7 +97,6 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
                 macroStatus = NOT_IN_MACRO;
                 macroName[strlen(macroName)-1] = '\0';
                 macroBody[strlen(macroBody)] = '\0';
-                printf("macro %s body: %s\n", macroName, macroBody);
                 insertResultCode = insert(table, macroName, macroBody);
                 /* error handling */
                 if (insertResultCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
@@ -185,7 +115,7 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
                 continue;
             }
 
-            cutCurrentLine[i-1] = '\n';
+            cutCurrentLine[i] = '\n';
             strcat(macroBody, cutCurrentLine);
             macroBody[strlen(macroBody)-1] = '\n';
         }
