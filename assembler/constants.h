@@ -35,7 +35,7 @@
 
 #define NUM_REGISTERS 8
 #define MAX_WORD_LENGTH 81
-#define HASH_TABLE_SIZE 100
+#define HASH_TABLE_SIZE 10
 #define NUM_BITS 14
 #define MAX_SHORT_VALUE 32768
 
