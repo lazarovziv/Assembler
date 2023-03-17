@@ -1,38 +1,21 @@
+.entry GUY
+.extern W
+ZIV: mov r3, GUY
+GUY: jmp L1(#16,ZIV)
 mcr m1
-	m1_body
+jmp ZIV(r3,GUY)
+inc W
 endmcr
-
-mcr m2
-	m2_body
-endmcr
-
-mcr m22
-	m22_body
-endmcr
-
-mcr my_mcr
-	my_mcr_body
-endmcr
-
-mcr my_endmcr
-	my_endmcr_body
-endmcr
-
+prn #18
+bne W(r7,r5)
+sub r3, r2
+bne ZIV
+L1: inc K
 m1
-above is m1
+.entry LOOP
+bne LOOP(K,W)
+STR: .string "xyz"
+LENGTH: .data 16,-21,152
+K: .data 22
+.extern L3
 
-m2
-above is m2
-
-m22
-above is m22
-
-my_endmcr
-
-kkkk
-
-
-my_mcr
-
-alsdkals
-askdjaklsd
