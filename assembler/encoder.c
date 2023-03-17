@@ -76,7 +76,10 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                 strncpy(labelName, &currentLine[j-currentLabelLength], currentLabelLength);
                 labelName[currentLabelLength] = '\0';
 
-                insert_int(entriesTable, labelName, *IC);
+                /* handling case where label was declared before ".entry labelName" command */
+                if (contains_key_int(table, labelName)) {
+                    insert_int(entriesTable, labelName, get_value_int(table, labelName));
+                } else insert_int(entriesTable, labelName, *IC);
 
                 if (maxLabelLength != -1) memset(labelName, 0, maxLabelLength);
                 memset(currentLine, 0, MAX_WORD_LENGTH);
@@ -105,7 +108,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                 strncpy(labelName, &currentLine[j-currentLabelLength], currentLabelLength);
                 labelName[currentLabelLength] = '\0';
 
-                insert_int(externsTable, labelName, *IC);
+                insert_int(externsTable, labelName, 1);
 
                 if (maxLabelLength != -1) memset(labelName, 0, maxLabelLength);
                 memset(currentLine, 0, MAX_WORD_LENGTH);
@@ -181,6 +184,9 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                     free(labelName);
                     return -1; /* TODO: handle errors if label already exists */
                 }
+                /* handling case where ".entry labelName" command was before definition of label */
+            } else if (contains_key_int(entriesTable, labelName)) {
+                change_value_int(entriesTable, labelName, *DC);
             }
 
             startParamsIdx++; /* skip space */
@@ -228,6 +234,8 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                     free(labelName);
                     return -1; /* TODO: handle errors if label already exists */
                 }
+            } else if (contains_key_int(entriesTable, labelName)) {
+                change_value_int(entriesTable, labelName, *IC);
             }
 
             for (startParamsIdx = 0; currentLine[startParamsIdx] != ':'; startParamsIdx++);
@@ -254,11 +262,16 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
         (*IC) += L;
     }
 
-    (*DC) += *IC;
-
     /* incrementing all symbol's table values by IC */
     for (i = 0; i < table->size; i++) {
         if (table->items[i]) {
+            current = table->items[i];
+            while (current) {
+                current->value += *IC;
+                current = current->next;
+            }
+        }
+        if (entriesTable->items[i]) {
             current = table->items[i];
             while (current) {
                 current->value += *IC;
@@ -288,7 +301,7 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
     const char externFilePostfix[] = ".ext";
 
     *IC = 0;
-    fileNameLength = strlen(fileName) - 3; /* -3 for .ob */
+    fileNameLength = strlen(fileName);
 
     /* checking if any entries exist */
     for (i = 0; i < entriesTable->size; i++) {
@@ -367,25 +380,24 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
         /* encode it from table/entriesTable/externsTable */
         if (is_label(&currentLine[i])) {
             /* an entry label */
-            if (contains_key_int(table, &currentLine[i])) {
-                /* go back to encode fully */
-                labelEncode = get_value_int(table, &currentLine[i]);
-                labelEncode = (labelEncode << SHIFTS_FOR_DEST) | R;
-                write_to_ob_file(labelEncode, encodedString, L, writeFile);
-                /* entry label is a regular label */
-            } else if (contains_key_int(entriesTable, &currentLine[i])) {
+            if (contains_key_int(entriesTable, &currentLine[i])) {
                 labelEncode = get_value_int(entriesTable, &currentLine[i]);
                 labelEncode = (labelEncode << SHIFTS_FOR_DEST) | R;
                 write_to_ob_file(labelEncode, encodedString, L, writeFile);
                 /* writing to entry file */
-                if (areEntries) fprintf(entriesFile, "%d\t%s\n", L, &currentLine[i]);
+                if (areEntries) fprintf(entriesFile, "%s\t%d\n", &currentLine[i], L);
+                /* a regular label */
+            } else if (contains_key_int(table, &currentLine[i])) {
+                labelEncode = get_value_int(table, &currentLine[i]);
+                labelEncode = (labelEncode << SHIFTS_FOR_DEST) | R;
+                write_to_ob_file(labelEncode, encodedString, L, writeFile);
                 /* an extern label */
             } else if (contains_key_int(externsTable, &currentLine[i])) {
                 labelEncode = 0;
                 labelEncode = labelEncode | E;
                 write_to_ob_file(labelEncode, encodedString, L, writeFile);
                 /* writing to entry file */
-                if (areExterns) fprintf(externsFile, "%d\t%s\n", L, &currentLine[i]);
+                if (areExterns) fprintf(externsFile, "%s\t%d\n", &currentLine[i], L);
             }
         }
     }
