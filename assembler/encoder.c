@@ -8,7 +8,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                hashTableInt *entriesTable, hashTableInt *externsTable) {
     int i, j, startParamsIdx;
     /* flag whether to encode currentLine of not */
-    int encodeLine = 1;
+    int encodeLine = 1, continueToSecondScan = 1;
     /* counting starts from 1 */
     int lineNum = 0;
     /* reading line from file */
@@ -34,7 +34,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
     while (fgets(currentLine, MAX_WORD_LENGTH, file) != NULL) {
         L = 0;
         lineNum++;
-        currentLine[strlen(currentLine)-1] = '\0';
+        if (strlen(currentLine) >= 1) currentLine[strlen(currentLine)-1] = '\0';
         strcpy(copyCurrentLine, currentLine);
         L = validLine(copyCurrentLine);
         strcpy(copyCurrentLine, currentLine);
@@ -44,6 +44,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
             /* TODO: print error */
             printf("Line %d invalid!\n", lineNum);
             encodeLine = 0;
+            continueToSecondScan = 0;
         }
 
         if (!encodeLine) {
@@ -282,7 +283,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
 
     free(labelName);
 
-    return 1;
+    return continueToSecondScan;
 }
 
 int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *table, hashTableInt *entriesTable, hashTableInt *externsTable, int *IC) {

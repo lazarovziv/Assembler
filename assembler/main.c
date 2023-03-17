@@ -158,6 +158,9 @@ int main(int argc, char *argv[]) {
         if (!second_scan(preScanFileNames[i], preScanFiles[i], finalFiles[i], labelsTables[i],
                          entriesTables[i], externsTables[i], &IC)) return 0;
 
+        /* remove .am file */
+        remove(postDeployFileNames[i]);
+
     }
 
     return 1;
