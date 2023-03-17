@@ -131,6 +131,9 @@ int secondGroupOps(char *line, int operation) {
             if(isRegister(firstParam) && isRegister(secondParam))
                 numOfWords = 3;
             else numOfWords = 4;
+
+            free(firstParam);
+            free(secondParam);
             break;
     }
 
@@ -140,8 +143,6 @@ int secondGroupOps(char *line, int operation) {
         return 0;
     }
     free(argument);
-    free(firstParam);
-    free(secondParam);
     return numOfWords ;
 }
 
