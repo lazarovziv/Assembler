@@ -79,8 +79,9 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
 
                 /* handling case where label was declared before ".entry labelName" command */
                 if (contains_key_int(table, labelName)) {
-                    insert_int(entriesTable, labelName, get_value_int(table, labelName));
-                } else insert_int(entriesTable, labelName, *IC);
+                    /* setting isData to -1 means no change for initial isData value */
+                    insert_int(entriesTable, labelName, get_value_int(table, labelName), -1);
+                } else insert_int(entriesTable, labelName, *IC, -1);
 
                 if (maxLabelLength != -1) memset(labelName, 0, maxLabelLength);
                 memset(currentLine, 0, MAX_WORD_LENGTH);
@@ -109,7 +110,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                 strncpy(labelName, &currentLine[j-currentLabelLength], currentLabelLength);
                 labelName[currentLabelLength] = '\0';
 
-                insert_int(externsTable, labelName, 1);
+                insert_int(externsTable, labelName, 1, -1);
 
                 if (maxLabelLength != -1) memset(labelName, 0, maxLabelLength);
                 memset(currentLine, 0, MAX_WORD_LENGTH);
@@ -176,18 +177,18 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
             }
             storeDataString[startParamsIdx-i] = '\0';
 
-            if (!contains_key_int(entriesTable, labelName)
+            /* handling case where ".entry labelName" command was before definition of label */
+            if (contains_key_int(entriesTable, labelName)) {
+                change_value_int(entriesTable, labelName, *DC, 1);
+            } else if (!contains_key_int(entriesTable, labelName)
                 && !contains_key_int(externsTable, labelName)) {
-                insertLabelReturnCode = insert_int(table, labelName, *DC);
+                insertLabelReturnCode = insert_int(table, labelName, *DC, 1);
 
                 if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                     fprintf(stderr, "Label %s already exists!\n", labelName);
                     free(labelName);
                     return -1; /* TODO: handle errors if label already exists */
                 }
-                /* handling case where ".entry labelName" command was before definition of label */
-            } else if (contains_key_int(entriesTable, labelName)) {
-                change_value_int(entriesTable, labelName, *DC);
             }
 
             startParamsIdx++; /* skip space */
@@ -196,11 +197,8 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                 token = strtok(&copyCurrentLine[startParamsIdx], ", \n");
                 while (token != NULL) {
                     encodedWord = (short) atoi(token);
-                    /*encodedWord = encodedWord << 2;*/
                     write_to_ob_file(encodedWord, encodedString, lineNum, writeFile);
-
                     (*DC)++;
-
                     token = strtok(NULL, ", \n");
                 }
                 /* .string declaration */
@@ -209,7 +207,6 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                 /* skipping space between .string and '"' and counting characters until '"' */
                 for (j = startParamsIdx; currentLine[j] != '"'; j++) {
                     encodedWord = (short) currentLine[j];
-                    /*encodedWord = encodedWord << 2;*/
                     write_to_ob_file(encodedWord, encodedString, lineNum, writeFile);
                     (*DC)++;
                 }
@@ -226,17 +223,17 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
             continue;
             /* not storing data */
         } else {
-            if (!contains_key_int(entriesTable, labelName)
+            if (contains_key_int(entriesTable, labelName)) {
+                change_value_int(entriesTable, labelName, *IC, 0);
+            } else if (!contains_key_int(entriesTable, labelName)
                 && !contains_key_int(externsTable, labelName)) {
-                insertLabelReturnCode = insert_int(table, labelName, *IC);
+                insertLabelReturnCode = insert_int(table, labelName, *IC, 0);
 
                 if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                     fprintf(stderr, "Label %s already exists!\n", labelName);
                     free(labelName);
                     return -1; /* TODO: handle errors if label already exists */
                 }
-            } else if (contains_key_int(entriesTable, labelName)) {
-                change_value_int(entriesTable, labelName, *IC);
             }
 
             for (startParamsIdx = 0; currentLine[startParamsIdx] != ':'; startParamsIdx++);
@@ -263,19 +260,22 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
         (*IC) += L;
     }
 
-    /* incrementing all symbol's table values by IC */
+    /* incrementing all local symbol's table values by IC */
     for (i = 0; i < table->size; i++) {
         if (table->items[i]) {
             current = table->items[i];
             while (current) {
-                current->value += *IC;
+                if (current->isData) current->value += *IC;
+                printf("key: %s\tvalue: %d\n", current->key, current->value);
                 current = current->next;
             }
         }
+
         if (entriesTable->items[i]) {
-            current = table->items[i];
+            current = entriesTable->items[i];
             while (current) {
-                current->value += *IC;
+                if (current->isData) current->value += *IC;
+                printf("key: %s\tvalue: %d\n", current->key, current->value);
                 current = current->next;
             }
         }
@@ -383,10 +383,9 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
             /* an entry label */
             if (contains_key_int(entriesTable, &currentLine[i])) {
                 labelEncode = get_value_int(entriesTable, &currentLine[i]);
-                labelEncode = (labelEncode << SHIFTS_FOR_DEST) | R;
-                write_to_ob_file(labelEncode, encodedString, L, writeFile);
-                /* writing to entry file */
-                if (areEntries) fprintf(entriesFile, "%s\t%d\n", &currentLine[i], L);
+                write_to_ob_file((labelEncode << SHIFTS_FOR_DEST) | R, encodedString, L, writeFile);
+                /* writing to entry file (with the row it was declared) */
+                if (areEntries) fprintf(entriesFile, "%s\t%d\n", &currentLine[i], labelEncode);
                 /* a regular label */
             } else if (contains_key_int(table, &currentLine[i])) {
                 labelEncode = get_value_int(table, &currentLine[i]);
@@ -397,7 +396,7 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
                 labelEncode = 0;
                 labelEncode = labelEncode | E;
                 write_to_ob_file(labelEncode, encodedString, L, writeFile);
-                /* writing to entry file */
+                /* writing to extern file (with word number it was shown at) */
                 if (areExterns) fprintf(externsFile, "%s\t%d\n", &currentLine[i], L);
             }
         }
