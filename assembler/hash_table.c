@@ -185,7 +185,8 @@ int get_value_int(hashTableInt *table, char *key) {
     return 0;
 }
 
-int insert_int(hashTableInt *table, char *key, int value) {
+/* setting isData to -1 means no change */
+int insert_int(hashTableInt *table, char *key, int value, int isData) {
     int idx, keyLength;
     hashTableIntItem *current, *last;
     if (strlen(key) == 0) return HASH_TABLE_INSERT_EMPTY_KEY_ERROR_CODE;
@@ -204,6 +205,7 @@ int insert_int(hashTableInt *table, char *key, int value) {
 
     last->key = NULL;
     last->value = -1;
+    if (isData != -1) last->isData = 0;
 
     /* if idx is not taken */
     if (table->items[idx] == NULL) table->items[idx] = last;
@@ -224,6 +226,7 @@ int insert_int(hashTableInt *table, char *key, int value) {
 
     strcpy(last->key, key);
     last->value = value;
+    if (isData != -1) last->isData = isData;
 
     /* everything went fine */
     return 1;
@@ -249,7 +252,7 @@ int contains_key_int(hashTableInt *table, char *key) {
     return 0;
 }
 
-int change_value_int(hashTableInt *table, char *key, int value) {
+int change_value_int(hashTableInt *table, char *key, int value, int isData) {
     int idx;
     hashTableIntItem *current;
     /* can't change value which isn't in table */
@@ -267,6 +270,7 @@ int change_value_int(hashTableInt *table, char *key, int value) {
 
     /* copying value to item */
     current->value = value;
+    current->isData = isData;
     return 1;
 }
 

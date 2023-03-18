@@ -20,6 +20,7 @@ typedef struct hashTable {
 typedef struct hashTableIntItem {
     char *key;
     int value;
+    int isData;
     struct hashTableIntItem *next;
 } hashTableIntItem;
 
@@ -38,6 +39,6 @@ int change_value(hashTable* table, char* key, char* value);
 /* for hashTableInt */
 int init_hash_table_int(hashTableInt *table, int size);
 int get_value_int(hashTableInt *table, char *key);
-int insert_int(hashTableInt *table, char *key, int value);
+int insert_int(hashTableInt *table, char *key, int value, int isData);
 int contains_key_int(hashTableInt *table, char *key);
-int change_value_int(hashTableInt *table, char *key, int value);
+int change_value_int(hashTableInt *table, char *key, int value, int isData);
