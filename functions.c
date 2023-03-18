@@ -27,6 +27,10 @@ int immediateAddressing(char *word) {
     }
     index++; /* skip ahead to the number */
     while (isdigit(word[index])) index++; /* read the entire number */
+    if(word[index] != '\0' && !isspace(word[index])) {
+        /* TODO: error invalid number */
+        return 0;
+    }
     while (isspace(word[index])) index++;
 
 
@@ -53,37 +57,64 @@ int terminatedCorrectly(char *line, int index) {
 
 int isLabel(char *line,int firstWordInLine) {
     int i;
+    int labelDefinition = 0;
     char firstChar = line[0];
+    char *firstWord;
+    char lastChar = line[strlen(line) - 1];
+    firstWord = (char*)malloc(sizeof (char*) * strlen(line));
+
+    /* if-else in order to check if its a definition of a label or a parameter */
+    if(firstWordInLine && lastChar == ':') {
+        copyWord(line, firstWord, strlen(line) - 1);
+        labelDefinition = 1;
+    }
+    else
+        copyWord(line,firstWord,strlen(line));
 
 
 
     for(i = 0;i < sizeof(operations) / sizeof(char*); i++){
-        if(strcmp(line, operations[i]) == 0){
+        if(strcmp(firstWord, operations[i]) == 0 && labelDefinition){
             /* TODO: error label is named as an operation */
+            errors(14);
             return 0;
         }
     }
 
 
     for(i = 0;i < sizeof(instruction_sentence) / sizeof(char*); i++){
-        if(strcmp(line, instruction_sentence[i]) == 0){
+        if(strcmp(firstWord, instruction_sentence[i]) == 0 && labelDefinition){
             /* TODO: error label is named as an instruction */
+            errors(13);
             return 0;
         }
     }
 
-    if(!isalpha(firstChar)) {
+    for (i = 0; i < sizeof(registers) / sizeof(char *); i++) {
+        if (strcmp(firstWord, registers[i]) == 0) {
+            if(firstWordInLine) {
+                /* TODO: error label defined as a register */
+                errors(15);
+                return 0;
+            }
+            else
+                return 1;
+        }
+    }
+
+    if(!isalpha(firstChar) && firstChar != '.') {
         /* TODO: error first character isnt alphabet */
         errors(0);
         return 0;
     }
 
-    for (i = 0; i < strlen(line); i++) {
+    for (i = 0; i < strlen(line) && !isspace(line[i]); i++) {
         if(firstWordInLine && i == strlen(line) - 1){
             /* label is defind as the first word in line so it need to end with : */
             return line[i] == ':';
         }
-        else if (!isalpha(line[i]) && !isdigit(line[i])) {
+        else if (!isalpha(line[i]) && !isdigit(line[i]) && labelDefinition) {
+            errors(17);
             return 0;
         }
     }
@@ -95,13 +126,14 @@ int isLabel(char *line,int firstWordInLine) {
                 return line[i] == ':';
             }
                 /* if we found out that its not a register */
-            else if(!isdigit(line[i]))
+            else if(!isdigit(line[i]) && !isspace(line[i]))
                 break;
         }
 
         /* we made  to the end of the line and it was all number i.e r1234 */
         if(i == strlen(line)) {
             /* TODO: undefind resgister name */
+            errors(16);
             return 0;
         }
     }

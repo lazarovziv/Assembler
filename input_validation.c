@@ -75,8 +75,8 @@ int secondGroupOps(char *line, int operation) {
     char *secondParam;
 
     /* skip whitespaces */
-    while (isspace(line[i]))
-        i++;
+    while (isspace(line[i]) && line[i] != '\0') i++;
+
 
     /* get first argument */
     copyFromMem = i;
@@ -95,11 +95,15 @@ int secondGroupOps(char *line, int operation) {
                 return 0;
             break;
         case PRN_CODE:
-            if (!validRegisterOrLabel(argument) || !immediateAddressing(argument))
+            if (!immediateAddressing(argument) && !validRegisterOrLabel(argument)  )
                 return 0;
+            break;
         case JMP_CODE:
         case BNE_CODE:
         case JSR_CODE:
+/* if any its without parenthesis like bne END */
+            if(isLabel(argument,0) && terminatedCorrectly(line,i))
+                return 2;
 
             /* must jump into a label */
             if (!isLabel(argument,0) || line[i] != '(') {
@@ -110,44 +114,53 @@ int secondGroupOps(char *line, int operation) {
             copyFromMem = i;
             if(line[i] == '#')
                 i++;
-            while(isalpha(line[i]) || isdigit(line[i])) i++;
+            while(isalpha(line[i]) || isdigit(line[i]) || line[i] == '-' || line[i] == '+') i++;
             wordSize = i - copyFromMem;
             firstParam = (char *) malloc(sizeof(char *) * wordSize);
             copyWord(&line[copyFromMem], firstParam, wordSize);
 
             i++;
             copyFromMem = i; /* start copying the second word */
-            while (isalpha(line[i]) || isdigit(line[i])) {
+            while (isalpha(line[i]) || isdigit(line[i]) || line[i] == '#') {
                 i++;
             }
             wordSize = i - copyFromMem;
             secondParam = (char *) malloc(sizeof(char *) * wordSize);
             copyWord(&line[copyFromMem], secondParam, wordSize);
 
-            if(!immediateAddressing(firstParam) && !isRegister(firstParam) && !isLabel(firstParam,0))
+            if(firstParam[0] == '#') {
+                if (!immediateAddressing(firstParam))
+                    return 0;
+            }
+            else if(!isRegister(firstParam) && !isLabel(firstParam,0))
                 return 0;
-            if(!immediateAddressing(secondParam) && !isRegister(secondParam) && !isLabel(secondParam,0))
+            if(secondParam[0] == '#') {
+                if (!immediateAddressing(secondParam))
+                    return 0;
+            }
+            else if(!isRegister(secondParam) && !isLabel(secondParam,0))
                 return 0;
 
             if(line[i] != ')')
                 return 0;
 
-            /* incrementing i in order to skip the ')' */
-            i++;
+
 
             if(isRegister(firstParam) && isRegister(secondParam))
                 numOfWords = 3;
             else numOfWords = 4;
+            free(firstParam);
+            free(secondParam);
             break;
     }
 
+    while(!isspace(line[i]) && line[i] != '\0') i++;
     if(!terminatedCorrectly(line, i)) {
         /* TODO: error */
         return 0;
     }
     free(argument);
-    free(firstParam);
-    free(secondParam);
+
     return numOfWords ;
 }
 
