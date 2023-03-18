@@ -142,7 +142,12 @@ int main(int argc, char *argv[]) {
         }
 
         if (!first_scan(postDeployReadFiles[i], preScanFiles[i], labelsTables[i],
-                   &IC, &DC, entriesTables[i], externsTables[i])) return 0;
+                   &IC, &DC, entriesTables[i], externsTables[i])) {
+            /* TODO: free all pointers */
+            fclose(preScanFiles[i]);
+            remove(preScanFileNames[i]); /* remove file that was created */
+            return 0;
+        }
 
         fclose(preScanFiles[i]);
 

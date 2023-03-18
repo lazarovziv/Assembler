@@ -266,7 +266,6 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
             current = table->items[i];
             while (current) {
                 if (current->isData) current->value += *IC;
-                printf("key: %s\tvalue: %d\n", current->key, current->value);
                 current = current->next;
             }
         }
@@ -275,7 +274,6 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
             current = entriesTable->items[i];
             while (current) {
                 if (current->isData) current->value += *IC;
-                printf("key: %s\tvalue: %d\n", current->key, current->value);
                 current = current->next;
             }
         }
