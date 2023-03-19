@@ -1,5 +1,16 @@
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
 #include "input_validation.h"
+#include "constants.h"
+#include "functions.h"
+#include "errors.h"
 
+
+
+
+
+enum status {COMMA,NUMBER,DONE};
 int firstGroupOps(int operation, char *line) {
     int i = 0;
     int wordSize = 0;
@@ -21,6 +32,7 @@ int firstGroupOps(int operation, char *line) {
 
     if(line[i] != ','){
         /* TODO: error missing comma */
+        errors(7);
         return 0;
     }
 
@@ -65,12 +77,12 @@ int secondGroupOps(char *line, int operation) {
     char *secondParam;
 
     /* skip whitespaces */
-    while (isspace(line[i]))
-        i++;
+    while (isspace(line[i]) && line[i] != '\0') i++;
+
 
     /* get first argument */
     copyFromMem = i;
-    while ((isalpha(line[i]) || isdigit(line[i]))) i++;
+    while ((isalpha(line[i]) || isdigit(line[i])) || line[i] == '#' || line[i] == '+' || line[i] == '-') i++;
     wordSize = i - copyFromMem;
     argument = (char *) malloc(sizeof(char *) * wordSize);
     copyWord(&line[copyFromMem], argument, wordSize);
@@ -85,17 +97,22 @@ int secondGroupOps(char *line, int operation) {
                 return 0;
             break;
         case PRN_CODE:
-            if (!validRegisterOrLabel(argument) && !immediateAddressing(argument))
+            if (!immediateAddressing(argument) && !validRegisterOrLabel(argument)  )
                 return 0;
             break;
         case JMP_CODE:
         case BNE_CODE:
         case JSR_CODE:
+/* if any its without parenthesis like bne END */
+            if(isLabel(argument,0) && terminatedCorrectly(line,i))
+                return 2;
 
-            if (isLabel(argument, 0) && terminatedCorrectly(line, i)) return 2;
-
+            if(line[i] != '('){
+                errors(19);
+                return 0;
+            }
             /* must jump into a label */
-            if (!isLabel(argument,0) || line[i] != '(') {
+            if (!isLabel(argument,0)) {
                 return 0;
             }
             i++; /* skip the '(' */
@@ -110,39 +127,51 @@ int secondGroupOps(char *line, int operation) {
 
             i++;
             copyFromMem = i; /* start copying the second word */
-            while (isalpha(line[i]) || isdigit(line[i])) {
+            while (isalpha(line[i]) || isdigit(line[i]) || line[i] == '#') {
                 i++;
             }
             wordSize = i - copyFromMem;
             secondParam = (char *) malloc(sizeof(char *) * wordSize);
             copyWord(&line[copyFromMem], secondParam, wordSize);
 
-            if(!immediateAddressing(firstParam) && !isRegister(firstParam) && !isLabel(firstParam,0))
+            if(firstParam[0] == '#') {
+                if (!immediateAddressing(firstParam))
+                    return 0;
+            }
+            else if(!isRegister(firstParam) && !isLabel(firstParam,0))
                 return 0;
-            if(!immediateAddressing(secondParam) && !isRegister(secondParam) && !isLabel(secondParam,0))
+            if(secondParam[0] == '#') {
+                if (!immediateAddressing(secondParam))
+                    return 0;
+            }
+            else if(!isRegister(secondParam) && !isLabel(secondParam,0))
                 return 0;
 
-            if(line[i] != ')')
+            if(line[i] != ')') {
+                errors(18);
                 return 0;
+            }
 
-            /* incrementing i in order to skip the ')' */
-            i++;
+
 
             if(isRegister(firstParam) && isRegister(secondParam))
                 numOfWords = 3;
             else numOfWords = 4;
-
             free(firstParam);
             free(secondParam);
             break;
     }
-
-    while (!isspace(line[i]) && line[i] != '\0') i++;
+    /* skip the ) */
+    if(line[i] == ')')
+        i++;
+    while(isspace(line[i]) && line[i] != '\0') i++;
     if(!terminatedCorrectly(line, i)) {
         /* TODO: error */
+        errors(4);
         return 0;
     }
     free(argument);
+
     return numOfWords ;
 }
 
@@ -184,7 +213,7 @@ int groupOneSecondArg(char *word, int operation) {
     } else if (strlen(word) == 0) {
         /* TODO: missing parameter */
         return 0;
-    } else if (operation == CMP_CODE && word[(int) firstCharacter] == '#' && immediateAddressing(word)) {
+    } else if (operation == CMP_CODE && word[firstCharacter] == '#' && immediateAddressing(word)) {
 
         /* TODO: error invalid number */
         return 0;
@@ -272,7 +301,7 @@ int validString(char *line){
 
     if(line[i] != '"' || line[finalChar] != '"')
         return 0;
-    return strlen(&line[i]) - 1;
+    return strlen(&line[i]) - 2;
 }
 
 int validEntryOrExtern(char *line){
