@@ -5,7 +5,7 @@ int main(int argc, char *argv[]) {
     FILE **readFiles, **writeFiles, **postDeployReadFiles, **preScanFiles, **finalFiles;
     hashTable **macrosTables;
     hashTableInt **labelsTables, **entriesTables, **externsTables;
-    int i, j;
+    int i, j, lastFileIndex = 0;
     int IC = 100, DC = 0;
     int longestMacroBodyLength = -1;
 
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
         finalFileNames[i-1] = (char *) calloc(currentFileNameLength + strlen(finalFilePostfix), sizeof(char)); /* adding 4 as adding .ob postfix */
 
         if (preDeployFileNames[i-1] == NULL || postDeployFileNames[i-1] == NULL
-        || preScanFileNames[i-1] == NULL || finalFileNames[i-1] == NULL) {
+            || preScanFileNames[i-1] == NULL || finalFileNames[i-1] == NULL) {
             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
@@ -108,28 +108,20 @@ int main(int argc, char *argv[]) {
         labelsTables[i] = (hashTableInt *) malloc(sizeof(hashTableInt));
 
         if (!init_hash_table_int(entriesTables[i], HASH_TABLE_SIZE) ||
-        !init_hash_table_int(externsTables[i], HASH_TABLE_SIZE) ||
-        !init_hash_table_int(labelsTables[i], HASH_TABLE_SIZE)) {
+            !init_hash_table_int(externsTables[i], HASH_TABLE_SIZE) ||
+            !init_hash_table_int(labelsTables[i], HASH_TABLE_SIZE)) {
             fprintf(stderr, "Unsuccessful initialization of hash table.\n");
-            return MAIN_ERROR_CODE;
+            break;
         }
 
         if ((preScanFiles[i] = fopen(preScanFileNames[i], WRITE_MODE)) == NULL) {
             fprintf(stderr, "Unable to write to file %s\n", preScanFileNames[i]);
-            free(preScanFileNames[i]);
-            /* free all opened files in case one doesn't exist */
-            for (j = 0; j < i; j++) fclose(preScanFiles[j]);
-            free(preScanFiles);
-            return MAIN_ERROR_CODE;
+            break;
         }
 
         if ((finalFiles[i] = fopen(finalFileNames[i], WRITE_MODE)) == NULL) {
             fprintf(stderr, "Unable to write to file %s\n", finalFileNames[i-1]);
-            free(finalFileNames[i-1]);
-            /* free all opened files in case one doesn't exist */
-            for (j = 0; j < i; j++) fclose(finalFiles[j]);
-            free(finalFiles);
-            return MAIN_ERROR_CODE;
+            break;
         }
 
         if ((postDeployReadFiles[i] = fopen(postDeployFileNames[i], READ_MODE)) == NULL) {
@@ -138,15 +130,13 @@ int main(int argc, char *argv[]) {
             /* free all opened files in case one doesn't exist */
             for (j = 0; j < i; j++) fclose(writeFiles[j]);
             free(writeFiles);
-            return MAIN_ERROR_CODE;
+            break;
         }
 
         if (!first_scan(postDeployReadFiles[i], preScanFiles[i], labelsTables[i],
-                   &IC, &DC, entriesTables[i], externsTables[i])) {
+                        &IC, &DC, entriesTables[i], externsTables[i])) {
             /* TODO: free all pointers */
-            fclose(preScanFiles[i]);
-            remove(preScanFileNames[i]); /* remove file that was created */
-            return 0;
+            break;
         }
 
         fclose(preScanFiles[i]);
@@ -157,7 +147,7 @@ int main(int argc, char *argv[]) {
             /* free all opened files in case one doesn't exist */
             for (j = 0; j < i; j++) fclose(preScanFiles[j]);
             free(preScanFiles);
-            return MAIN_ERROR_CODE;
+            break;
         }
 
         if (!second_scan(preScanFileNames[i], preScanFiles[i], finalFiles[i], labelsTables[i],
@@ -166,7 +156,44 @@ int main(int argc, char *argv[]) {
         /* remove .am file */
         remove(postDeployFileNames[i]);
 
+        lastFileIndex++;
     }
+
+    for (i = 0; i < lastFileIndex; i++) {
+        /* close all files */
+        fclose(readFiles[i]);
+        fclose(writeFiles[i]);
+        fclose(postDeployReadFiles[i]);
+        fclose(preScanFiles[i]);
+        fclose(finalFiles[i]);
+        /* free all file names */
+        free(preDeployFileNames[i]);
+        free(postDeployFileNames[i]);
+        free(preScanFileNames[i]);
+        free(finalFileNames[i]);
+        /* free all tables */
+        free(macrosTables[i]);
+        free(labelsTables[i]);
+        free(entriesTables[i]);
+        free(externsTables[i]);
+    }
+
+    /* free all arrays */
+    free(readFiles);
+    free(writeFiles);
+    free(postDeployReadFiles);
+    free(preScanFiles);
+    free(finalFiles);
+
+    free(preDeployFileNames);
+    free(postDeployFileNames);
+    free(preScanFileNames);
+    free(finalFileNames);
+
+    free(macrosTables);
+    free(labelsTables);
+    free(entriesTables);
+    free(externsTables);
 
     return 1;
 }
