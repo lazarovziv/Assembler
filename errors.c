@@ -58,6 +58,12 @@ void errors(int error) {
         case 17:
             fprintf(stderr,"Undefined label\n");
             break;
+        case 18:
+            fprintf(stderr,"Missing )\n");
+            break;
+        case 19:
+            fprintf(stderr,"Missing (\n");
+            break;
 
     }
 }

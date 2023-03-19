@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 #include "functions.h"
 #include "errors.h"
 #define REGISTER_WORD_LEN 2
@@ -50,6 +51,7 @@ void getArgument(char *line, char *target, int index) {
 
 int terminatedCorrectly(char *line, int index) {
     int i = index;
+    printf("char : %c\n",line[i]);
     while(isspace(line[i]) && line[i] != '\0')
         i++;
     return line[i] == '\0';
@@ -126,7 +128,7 @@ int isLabel(char *line,int firstWordInLine) {
                 return line[i] == ':';
             }
                 /* if we found out that its not a register */
-            else if(!isdigit(line[i]) && !isspace(line[i]))
+            else if(!isdigit(line[i]))
                 break;
         }
 
@@ -161,8 +163,10 @@ int validNumber(char *num){
         return 0;
     i++;
     while(num[i] != '\0'){
-        if(!isdigit(num[i]))
+        if(!isdigit(num[i])) {
+            errors(10);
             return 0;
+        }
         i++;
     }
     return 1;

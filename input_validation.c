@@ -4,6 +4,7 @@
 #include "input_validation.h"
 #include "constants.h"
 #include "functions.h"
+#include "errors.h"
 
 
 
@@ -31,6 +32,7 @@ int firstGroupOps(int operation, char *line) {
 
     if(line[i] != ','){
         /* TODO: error missing comma */
+        errors(7);
         return 0;
     }
 
@@ -80,7 +82,7 @@ int secondGroupOps(char *line, int operation) {
 
     /* get first argument */
     copyFromMem = i;
-    while ((isalpha(line[i]) || isdigit(line[i]))) i++;
+    while ((isalpha(line[i]) || isdigit(line[i])) || line[i] == '#' || line[i] == '+' || line[i] == '-') i++;
     wordSize = i - copyFromMem;
     argument = (char *) malloc(sizeof(char *) * wordSize);
     copyWord(&line[copyFromMem], argument, wordSize);
@@ -105,8 +107,12 @@ int secondGroupOps(char *line, int operation) {
             if(isLabel(argument,0) && terminatedCorrectly(line,i))
                 return 2;
 
+            if(line[i] != '('){
+                errors(19);
+                return 0;
+            }
             /* must jump into a label */
-            if (!isLabel(argument,0) || line[i] != '(') {
+            if (!isLabel(argument,0)) {
                 return 0;
             }
             i++; /* skip the '(' */
@@ -141,8 +147,10 @@ int secondGroupOps(char *line, int operation) {
             else if(!isRegister(secondParam) && !isLabel(secondParam,0))
                 return 0;
 
-            if(line[i] != ')')
+            if(line[i] != ')') {
+                errors(18);
                 return 0;
+            }
 
 
 
@@ -153,10 +161,13 @@ int secondGroupOps(char *line, int operation) {
             free(secondParam);
             break;
     }
-
-    while(!isspace(line[i]) && line[i] != '\0') i++;
+    /* skip the ) */
+    if(line[i] == ')')
+        i++;
+    while(isspace(line[i]) && line[i] != '\0') i++;
     if(!terminatedCorrectly(line, i)) {
         /* TODO: error */
+        errors(4);
         return 0;
     }
     free(argument);
