@@ -1,0 +1,1 @@
+void errors(int error);
