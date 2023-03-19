@@ -87,8 +87,12 @@ int secondGroupOps(char *line, int operation) {
                 return 0;
             break;
         case PRN_CODE:
-            if (!immediateAddressing(argument) && !validRegisterOrLabel(argument)  )
+            if (immediateAddressing(argument) || validRegisterOrLabel(argument)  )
+                return 1;
+            if (line[i] == '\0') {
+                errors(20);
                 return 0;
+            }
             break;
         case JMP_CODE:
         case BNE_CODE:
@@ -96,6 +100,11 @@ int secondGroupOps(char *line, int operation) {
 /* if any its without parenthesis like bne END */
             if(isLabel(argument,0) && terminatedCorrectly(line,i))
                 return 2;
+
+            if (line[i] == '\0') {
+                errors(20);
+                return 0;
+            }
 
             if(line[i] != '('){
                 errors(19);
@@ -242,6 +251,11 @@ int validData(char *line){
     /* skip whitespaces */
     while(isspace(line[i])) i++;
 
+    if (line[i] == '\0') {
+        errors(9);
+        return 0;
+    }
+
     while(line[i] != '\0'){
         switch(state){
             case NUMBER:
@@ -288,6 +302,11 @@ int validString(char *line){
     int finalChar = strlen(line) - 1;
     /*skip whitespaces */
     while(isspace(line[i])) i++;
+
+    if (line[i] == '\0') {
+        errors(11);
+        return 0;
+    }
 
     if(line[i] != '"' || line[finalChar] != '"')
         return 0;
