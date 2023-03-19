@@ -43,7 +43,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
 
         if (!L) {
             /* TODO: print error */
-            printf("Line %d invalid!\n", lineNum);
+            printf("in line %d\n\n", lineNum);
             encodeLine = 0;
             continueToSecondScan = 0;
         }
@@ -327,7 +327,6 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
 int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *table, hashTableInt *entriesTable, hashTableInt *externsTable, int *IC) {
     int i;
     int L = 100-1;
-    int numDigits = 1;
     int areEntries = 0, areExterns = 0;
     char currentLine[MAX_WORD_LENGTH];
     char encodedString[NUM_BITS];
@@ -364,6 +363,7 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
         newEntryFileName = (char *) calloc(fileNameLength + strlen(entryFilePostfix), sizeof(char));
         if (newEntryFileName == NULL) {
             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+            remove(fileName);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
         for (i = 0; i < fileNameLength; i++) {
@@ -375,6 +375,7 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
         newEntryFileName[i+4] = '\0';
         if ((entriesFile = fopen(newEntryFileName, WRITE_MODE)) == NULL) {
             fprintf(stderr, "Error trying to open file %s\n", newEntryFileName);
+            remove(fileName);
             free(newEntryFileName);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
@@ -385,6 +386,7 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
         newExternFileName = (char *) calloc(fileNameLength + strlen(externFilePostfix), sizeof(char));
         if (newExternFileName == NULL) {
             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+            remove(fileName);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
         for (i = 0; i < fileNameLength; i++) {
@@ -396,6 +398,7 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
         newExternFileName[i+4] = '\0';
         if ((externsFile = fopen(newExternFileName, WRITE_MODE)) == NULL) {
             fprintf(stderr, "Error trying to open file %s\n", newExternFileName);
+            remove(fileName);
             free(newExternFileName);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
@@ -403,7 +406,6 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
 
     while (fgets(currentLine, MAX_WORD_LENGTH, readFile) != NULL) {
         L++;
-        if (L % 10 == 0) numDigits++;
         currentLine[strlen(currentLine)-1] = '\0';
         labelEncode = 0;
 
@@ -437,6 +439,15 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
                 write_to_ob_file(labelEncode, encodedString, L, writeFile);
                 /* writing to extern file (with word number it was shown at) */
                 if (areExterns) fprintf(externsFile, "%s\t%d\n", &currentLine[i], L);
+                /* label wasn't defined at all */
+            } else {
+                fprintf(stderr, "%s: %s", &currentLine[i], LABEL_UNDEFINED_ERROR_MESSAGE);
+                remove(newEntryFileName);
+                remove(newExternFileName);
+                remove(fileName);
+                free(newEntryFileName);
+                free(newExternFileName);
+                return 0;
             }
         }
     }
