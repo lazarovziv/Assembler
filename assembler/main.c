@@ -159,41 +159,5 @@ int main(int argc, char *argv[]) {
         lastFileIndex++;
     }
 
-    for (i = 0; i < lastFileIndex; i++) {
-        /* close all files */
-        fclose(readFiles[i]);
-        fclose(writeFiles[i]);
-        fclose(postDeployReadFiles[i]);
-        fclose(preScanFiles[i]);
-        fclose(finalFiles[i]);
-        /* free all file names */
-        free(preDeployFileNames[i]);
-        free(postDeployFileNames[i]);
-        free(preScanFileNames[i]);
-        free(finalFileNames[i]);
-        /* free all tables */
-        free(macrosTables[i]);
-        free(labelsTables[i]);
-        free(entriesTables[i]);
-        free(externsTables[i]);
-    }
-
-    /* free all arrays */
-    free(readFiles);
-    free(writeFiles);
-    free(postDeployReadFiles);
-    free(preScanFiles);
-    free(finalFiles);
-
-    free(preDeployFileNames);
-    free(postDeployFileNames);
-    free(preScanFileNames);
-    free(finalFileNames);
-
-    free(macrosTables);
-    free(labelsTables);
-    free(entriesTables);
-    free(externsTables);
-
     return 1;
 }
