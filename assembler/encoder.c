@@ -56,6 +56,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
         if (command_code(currentLine) == RTS_CODE || command_code(currentLine) == STOP_CODE) {
             encode_regular_command(writeFile, command_code(currentLine),
                                    currentLine, lineNum, encodedString);
+            (*IC) += L;
             continue;
         }
 
@@ -88,6 +89,11 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                 if (contains_key_int(table, labelName)) {
                     /* setting isData to -1 means no change for initial isData value */
                     insertLabelReturnCode = insert_int(entriesTable, labelName, get_value_int(table, labelName), -1);
+                    if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
+                        fprintf(stderr, "Label %s already exists!\n", labelName);
+                        free(labelName);
+                        return 0; /* TODO: handle errors if label already exists */
+                    }
                     /* label already declared */
                 } else if (contains_key_int(entriesTable, labelName)) {
                     /* TODO: print error label declared twice as entry */
@@ -98,7 +104,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                     fprintf(stderr, "%s: %s", labelName, LABEL_DECLARED_EXTERN_AND_ENTRY_ERROR_MESSAGE);
                     return 0;
                 } else {
-                    insertLabelReturnCode = insert_int(entriesTable, labelName, *IC, -1);
+                    insertLabelReturnCode = insert_int(entriesTable, labelName, *IC, 0);
                     if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                         fprintf(stderr, "Label %s already exists!\n", labelName);
                         free(labelName);
@@ -144,7 +150,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                     fprintf(stderr, "%s: %s", labelName, REDEFINITION_OF_LABEL_ERROR_MESSAGE);
                     return 0;
                 } else {
-                    insertLabelReturnCode = insert_int(externsTable, labelName, 1, -1);
+                    insertLabelReturnCode = insert_int(externsTable, labelName, 1, 0);
                     if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                         fprintf(stderr, "Label %s already exists!\n", labelName);
                         free(labelName);
@@ -274,6 +280,10 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                     free(labelName);
                     return -1; /* TODO: handle errors if label already exists */
                 }
+                /* already declared */
+            } else if (contains_key_int(table, labelName)) {
+                fprintf(stderr, "%s: %s", labelName, REDEFINITION_OF_LABEL_ERROR_MESSAGE);
+                return 0;
             }
 
             for (startParamsIdx = 0; currentLine[startParamsIdx] != ':'; startParamsIdx++);
