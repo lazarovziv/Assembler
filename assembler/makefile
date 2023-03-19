@@ -26,5 +26,5 @@ errors.o: errors.c errors.h
 	gcc -ansi -pedantic -Wall -c errors.c
 
 clean:
-	rm *.o *.am *.ext *.ent *.ob
+	rm *.o *.ext *.ent *.ob
 

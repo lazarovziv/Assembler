@@ -35,6 +35,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
         L = 0;
         lineNum++;
         if (strlen(currentLine) >= 1) currentLine[strlen(currentLine)-1] = '\0';
+        else continue;
         strcpy(copyCurrentLine, currentLine);
         L = validLine(copyCurrentLine);
         strcpy(copyCurrentLine, currentLine);
@@ -49,6 +50,12 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
 
         if (!encodeLine) {
             encodeLine = 1;
+            continue;
+        }
+
+        if (command_code(currentLine) == RTS_CODE || command_code(currentLine) == STOP_CODE) {
+            encode_regular_command(writeFile, command_code(currentLine),
+                                   currentLine, lineNum, encodedString);
             continue;
         }
 
@@ -77,11 +84,27 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                 strncpy(labelName, &currentLine[j-currentLabelLength], currentLabelLength);
                 labelName[currentLabelLength] = '\0';
 
-                /* handling case where label was declared before ".entry labelName" command */
+                /* handle duplications and handling case where label was declared before ".entry labelName" command */
                 if (contains_key_int(table, labelName)) {
                     /* setting isData to -1 means no change for initial isData value */
-                    insert_int(entriesTable, labelName, get_value_int(table, labelName), -1);
-                } else insert_int(entriesTable, labelName, *IC, -1);
+                    insertLabelReturnCode = insert_int(entriesTable, labelName, get_value_int(table, labelName), -1);
+                    /* label already declared */
+                } else if (contains_key_int(entriesTable, labelName)) {
+                    /* TODO: print error label declared twice as entry */
+                    fprintf(stderr, "%s: %s", labelName, LABEL_DECLARED_ENTRY_ERROR_MESSAGE);
+                    return 0;
+                } else if (contains_key_int(externsTable, labelName)) {
+                    /* TODO: print error label declared entry and extern */
+                    fprintf(stderr, "%s: %s", labelName, LABEL_DECLARED_EXTERN_AND_ENTRY_ERROR_MESSAGE);
+                    return 0;
+                } else {
+                    insertLabelReturnCode = insert_int(entriesTable, labelName, *IC, -1);
+                    if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
+                        fprintf(stderr, "Label %s already exists!\n", labelName);
+                        free(labelName);
+                        return 0; /* TODO: handle errors if label already exists */
+                    }
+                }
 
                 if (maxLabelLength != -1) memset(labelName, 0, maxLabelLength);
                 memset(currentLine, 0, MAX_WORD_LENGTH);
@@ -110,7 +133,24 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                 strncpy(labelName, &currentLine[j-currentLabelLength], currentLabelLength);
                 labelName[currentLabelLength] = '\0';
 
-                insert_int(externsTable, labelName, 1, -1);
+                /* handle duplications */
+                if (contains_key_int(externsTable, labelName)) {
+                    fprintf(stderr, "%s: %s", labelName, LABEL_DECLARED_EXTERN_ERROR_MESSAGE);
+                    return 0;
+                } else if (contains_key_int(entriesTable, labelName)) {
+                    fprintf(stderr, "%s: %s", labelName, LABEL_DECLARED_ENTRY_AND_EXTERN_ERROR_MESSAGE);
+                    return 0;
+                } else if (contains_key_int(table, labelName)) {
+                    fprintf(stderr, "%s: %s", labelName, REDEFINITION_OF_LABEL_ERROR_MESSAGE);
+                    return 0;
+                } else {
+                    insertLabelReturnCode = insert_int(externsTable, labelName, 1, -1);
+                    if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
+                        fprintf(stderr, "Label %s already exists!\n", labelName);
+                        free(labelName);
+                        return 0; /* TODO: handle errors if label already exists */
+                    }
+                }
 
                 if (maxLabelLength != -1) memset(labelName, 0, maxLabelLength);
                 memset(currentLine, 0, MAX_WORD_LENGTH);
@@ -181,7 +221,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
             if (contains_key_int(entriesTable, labelName)) {
                 change_value_int(entriesTable, labelName, *DC, 1);
             } else if (!contains_key_int(entriesTable, labelName)
-                && !contains_key_int(externsTable, labelName)) {
+                       && !contains_key_int(externsTable, labelName)) {
                 insertLabelReturnCode = insert_int(table, labelName, *DC, 1);
 
                 if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
@@ -226,7 +266,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
             if (contains_key_int(entriesTable, labelName)) {
                 change_value_int(entriesTable, labelName, *IC, 0);
             } else if (!contains_key_int(entriesTable, labelName)
-                && !contains_key_int(externsTable, labelName)) {
+                       && !contains_key_int(externsTable, labelName)) {
                 insertLabelReturnCode = insert_int(table, labelName, *IC, 0);
 
                 if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
@@ -372,7 +412,8 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
 
         /* encoded line doesn't need to be rewritten */
         if (currentLine[i] == '.' || currentLine[i] == '/') {
-            fprintf(writeFile, "%d\t%s\n", L, &currentLine[i]);
+            if (L < 1000) fprintf(writeFile, "%d%d\t%s\n", 0, L, &currentLine[i]);
+            else fprintf(writeFile, "%d\t%s\n", L, &currentLine[i]);
             continue;
         }
 
@@ -736,7 +777,8 @@ void convert_to_special_binary(int num, char finalString[]) {
 
 void write_to_ob_file(int num, char finalString[], int lineNum, FILE *file) {
     convert_to_special_binary(num, finalString);
-    fprintf(file, "%d\t%s\n", lineNum, finalString);
+    if (lineNum < 1000) fprintf(file, "%d%d\t%s\n", 0, lineNum, finalString);
+    else fprintf(file, "%d\t%s\n", lineNum, finalString);
 }
 
 int command_code(char *command) {

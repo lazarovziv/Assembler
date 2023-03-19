@@ -14,6 +14,11 @@
 #define HASH_TABLE_KEY_DOESNT_EXIST_ERROR_MESSAGE "This key doesn't exist in the hash table.\n"
 #define FILE_NOT_EXIST_ERROR_MESSAGE "The file you specified doesn't exist..\n"
 #define MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE "Memory wasn't allocated successfully.\n"
+#define LABEL_DECLARED_EXTERN_AND_ENTRY_ERROR_MESSAGE "Entry label already declared as extern label.\n"
+#define LABEL_DECLARED_ENTRY_AND_EXTERN_ERROR_MESSAGE "Extern label already declared as entry label.\n"
+#define LABEL_DECLARED_EXTERN_ERROR_MESSAGE "Label already declared as extern label.\n"
+#define LABEL_DECLARED_ENTRY_ERROR_MESSAGE "Label already declared as entry label.\n"
+#define REDEFINITION_OF_LABEL_ERROR_MESSAGE "Label already defined.\n"
 
 #define UNKNOWN_CODE -1
 #define MOV_CODE 0
