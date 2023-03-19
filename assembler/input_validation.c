@@ -1,16 +1,6 @@
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include "input_validation.h"
-#include "constants.h"
-#include "functions.h"
-#include "errors.h"
 
 
-
-
-
-enum status {COMMA,NUMBER,DONE};
 int firstGroupOps(int operation, char *line) {
     int i = 0;
     int wordSize = 0;
@@ -213,7 +203,7 @@ int groupOneSecondArg(char *word, int operation) {
     } else if (strlen(word) == 0) {
         /* TODO: missing parameter */
         return 0;
-    } else if (operation == CMP_CODE && word[firstCharacter] == '#' && immediateAddressing(word)) {
+    } else if (operation == CMP_CODE && word[(int) firstCharacter] == '#' && immediateAddressing(word)) {
 
         /* TODO: error invalid number */
         return 0;

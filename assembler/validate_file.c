@@ -1,17 +1,6 @@
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include "input_validation.h"
-#include "constants.h"
-#include <stdlib.h>
-#include "functions.h"
 #include "validate_file.h"
-#include "errors.h"
+
 #define MAX_LINE_SIZE 80
-
-int validFile(char *fileToOpen);
-int validLine(char *line);
-
 
 char *operationss[] = {"mov", "cmp", "add", "sub", "lea",
                        "not", "clr", "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
@@ -21,9 +10,9 @@ char *instruction_sentencee[] = {".data", ".string", ".entry", ".extern"};
 
 int validFile(char *fileToOpen){
     FILE *file;
+    int lineNumber = 1;
     char currentLine[MAX_LINE_SIZE];
     file = fopen(fileToOpen,"r");
-    int lineNumber = 1;
     if(file == NULL){
         printf("Error opening my file\n");
         return 0;
@@ -93,13 +82,14 @@ int sendToOp(char *line,int operation,int copyFrom){
 
 int sendToInstruction(char *line, int instruction, int copyFrom){
     int index = copyFrom;
+    /*char *lineToSend;*/
     if(line[index] == '.')
         index++;
     /* skip the operation word */
     while(isspace(line[index]) && line[index] != '\0') index++;
     while((isalpha(line[index]) && line[index] != '\0') || line[index] == '.') index++;
 
-    char *lineToSend = &line[index];
+    /*lineToSend = &line[index];*/
     if(instruction == 0)
         return validData(&line[index]);
     else if(instruction == 1)

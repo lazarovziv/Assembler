@@ -1,10 +1,5 @@
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdio.h>
 #include "functions.h"
-#include "errors.h"
-#define REGISTER_WORD_LEN 2
+
 char *registers[] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
 char *operations[] = {"mov", "cmp", "add", "sub", "lea",
                       "not", "clr", "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
@@ -51,7 +46,6 @@ void getArgument(char *line, char *target, int index) {
 
 int terminatedCorrectly(char *line, int index) {
     int i = index;
-    printf("char : %c\n",line[i]);
     while(isspace(line[i]) && line[i] != '\0')
         i++;
     return line[i] == '\0';
