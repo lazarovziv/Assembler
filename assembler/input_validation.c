@@ -88,7 +88,7 @@ int secondGroupOps(char *line, int operation) {
             break;
         case PRN_CODE:
             if (immediateAddressing(argument) || validRegisterOrLabel(argument)  )
-                return 1;
+                return 2;
             if (line[i] == '\0') {
                 errors(20);
                 return 0;
