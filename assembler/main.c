@@ -119,11 +119,6 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        if ((finalFiles[i] = fopen(finalFileNames[i], WRITE_MODE)) == NULL) {
-            fprintf(stderr, "Unable to write to file %s\n", finalFileNames[i-1]);
-            break;
-        }
-
         if ((postDeployReadFiles[i] = fopen(postDeployFileNames[i], READ_MODE)) == NULL) {
             fprintf(stderr, "Unable to write to file %s\n", postDeployFileNames[i]);
             free(postDeployFileNames[i]);
@@ -136,10 +131,24 @@ int main(int argc, char *argv[]) {
         if (!first_scan(postDeployReadFiles[i], preScanFiles[i], labelsTables[i],
                         &IC, &DC, entriesTables[i], externsTables[i])) {
             /* TODO: free all pointers */
+            fclose(postDeployReadFiles[i]);
+            fclose(preScanFiles[i]);
+            remove(postDeployFileNames[i]);
+            remove(preScanFileNames[i]);
+
+            free(labelsTables[i]);
+            free(entriesTables[i]);
+            free(externsTables[i]);
+
             break;
         }
 
         fclose(preScanFiles[i]);
+
+        if ((finalFiles[i] = fopen(finalFileNames[i], WRITE_MODE)) == NULL) {
+            fprintf(stderr, "Unable to write to file %s\n", finalFileNames[i-1]);
+            break;
+        }
 
         if ((preScanFiles[i] = fopen(preScanFileNames[i], READ_MODE)) == NULL) {
             fprintf(stderr, "Unable to write to file %s\n", preScanFileNames[i]);
