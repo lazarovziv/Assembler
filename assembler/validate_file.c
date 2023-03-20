@@ -45,17 +45,32 @@ int validLine(char *line){
     char *token;
     char *delimiter = " \n\r\t\b";
     int index = 0;
-    int i;
+    int i = 0;
+    int copyFromHere = 0;
     char *copyLine;
+    char *temp;
     int firstWordInLine = 1;
+    int foundLabel = 0;
+    while(isspace(line[i])) i++;
+    copyFromHere = i;
+    while(isalpha(line[i]) || isdigit(line[i])) i++;
+
+    if(line[i] == ':'){
+        temp = (char*)malloc(sizeof(char*) * i + 1);
+        copyWord(&line[copyFromHere],temp,i + 1);
+        if(isLabel(temp,firstWordInLine)){
+            index += strlen(temp);
+            i += 1;
+            foundLabel = 1;
+        }
+    }
+    if(!foundLabel)
+        i = 0;
     copyLine = (char*)malloc(sizeof(char*) * strlen(line));
-    copyWord(line,copyLine,strlen(line));
+    copyWord(&line[i],copyLine,strlen(line));
     token = strtok(copyLine, delimiter);
 
     while(isspace(line[index]) && line[index] != '\0') index++;
-
-    if(isLabel(token,firstWordInLine))
-        index += strlen(token);
 
     while (token != NULL) {
         for(i = 0;i < sizeof(operationss) / sizeof(char*); i++) {
