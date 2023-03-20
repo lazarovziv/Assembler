@@ -4,7 +4,7 @@ int deploy_macros(FILE *readFile, FILE *writeFile, hashTable *labelTable, int *l
     calculate_longest_macro_body(readFile, longestMacroBodyLength);
     /* going back to start of readFile to reiterate it for writing */
     rewind(readFile);
-    if (!read_macros_from_file(readFile, labelTable, longestMacroBodyLength)) return MAIN_ERROR_CODE;
+    if (!read_macros_from_file(readFile, labelTable, longestMacroBodyLength)) return 0;
     /* going back to start of readFile to reiterate it for writing */
     rewind(readFile);
     write_macros_to_file(readFile, writeFile, labelTable);
@@ -21,7 +21,7 @@ int deploy_macros(FILE *readFile, FILE *writeFile, hashTable *labelTable, int *l
 int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
     int i, j, start, end;
     int maxMacroBodyLength = *longestMacroBody, endMacro = 1;
-    int macroNameMaxLength = -1;
+    int macroNameMaxLength = -1, currentMacroLength = 0;
     int tokenLength, currentLineLength = -1, insertResultCode;
     char *token;
     char *macroName = NULL;
@@ -94,8 +94,22 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
                 }
             }
             if (endMacro) {
+                if (currentMacroLength == 0) {
+                    /* TODO: print error empty macro */
+                    return 0;
+                }
+
                 macroStatus = NOT_IN_MACRO;
+                currentMacroLength = 0;
                 macroName[strlen(macroName)-1] = '\0';
+
+                /* check if macro name is an instruction name */
+                if (is_command(macroName)) {
+                    /* TODO: print error macro name is an instruction */
+                    fprintf(stderr, "%s: %s", macroName, MACRO_NAME_ILLEGAL_ERROR_MESSAGE);
+                    return 0;
+                }
+
                 macroBody[strlen(macroBody)] = '\0';
                 insertResultCode = insert(table, macroName, macroBody);
                 /* error handling */
@@ -103,7 +117,7 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
                     fprintf(stderr, "Macro %s:\n%s",
                             macroName, MACRO_ALREADY_EXISTS_ERROR_MESSAGE);
                     free(macroName);
-                    return MACRO_ALREADY_DEFINED_ERROR_CODE;
+                    return 0;
                 } /* TODO: add more errors */
 
                 memset(macroName, 0, macroNameMaxLength);
@@ -117,7 +131,8 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
 
             cutCurrentLine[i] = '\n';
             strcat(macroBody, cutCurrentLine);
-            macroBody[strlen(macroBody)-1] = '\n';
+            macroBody[strlen(macroBody)] = '\n';
+            currentMacroLength += strlen(cutCurrentLine);
         }
 
         memset(currentLine, 0, MAX_WORD_LENGTH);
@@ -313,4 +328,27 @@ void calculate_longest_macro_body(FILE *file, int *longest) {
         memset(cutCurrentLine, 0, MAX_WORD_LENGTH);
         endMacro = 1;
     }
+}
+
+int is_command(char *line) {
+    int commandCode = -1;
+
+    if (strcmp(line, "mov") == 0) commandCode = MOV_CODE;
+    else if (strcmp(line, "cmp") == 0) commandCode = CMP_CODE;
+    else if (strcmp(line, "add") == 0) commandCode = ADD_CODE;
+    else if (strcmp(line, "sub") == 0) commandCode = SUB_CODE;
+    else if (strcmp(line, "not") == 0) commandCode = NOT_CODE;
+    else if (strcmp(line, "clr") == 0) commandCode = CLR_CODE;
+    else if (strcmp(line, "lea") == 0) commandCode = LEA_CODE;
+    else if (strcmp(line, "inc") == 0) commandCode = INC_CODE;
+    else if (strcmp(line, "dec") == 0) commandCode = DEC_CODE;
+    else if (strcmp(line, "jmp") == 0) commandCode = JMP_CODE;
+    else if (strcmp(line, "bne") == 0) commandCode = BNE_CODE;
+    else if (strcmp(line, "red") == 0) commandCode = RED_CODE;
+    else if (strcmp(line, "prn") == 0) commandCode = PRN_CODE;
+    else if (strcmp(line, "jsr") == 0) commandCode = JSR_CODE;
+    else if (strcmp(line, "rts") == 0) commandCode = RTS_CODE;
+
+    /* MOV_CODE = 0, so if it was "mov" it' return false so adding 1 and initializing with -1 in case no condition is met */
+    return commandCode+1;
 }

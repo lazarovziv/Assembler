@@ -64,6 +64,9 @@ void errors(int error) {
         case 19:
             fprintf(stderr,"Missing (\n");
             break;
+        case 20:
+            fprintf(stderr, "Missing parameter(/s)\n");
+            break;
 
     }
 }
