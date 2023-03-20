@@ -28,7 +28,6 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
     /* encoded string */
     char encodedString[NUM_BITS];
 
-    short encodedWord = 0;
     short operationEncode = 0;
 
     while (fgets(currentLine, MAX_WORD_LENGTH, file) != NULL) {
@@ -166,6 +165,27 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
             }
 
 
+            if (strstr(currentLine, STRING_STORE_COMMAND)) {
+                strcpy(copyCurrentLine, currentLine);
+                /* reaching .string declaration */
+                for (startParamsIdx = 0; currentLine[startParamsIdx] != '.'; startParamsIdx++);
+                /* skip string word and spaces after */
+                for (startParamsIdx = startParamsIdx + 1; isalpha(currentLine[startParamsIdx])
+                || isspace(currentLine[startParamsIdx]); startParamsIdx++);
+                startParamsIdx++; /* skip \" */
+                encode_data_command(writeFile, &copyCurrentLine[startParamsIdx], 0, lineNum, encodedString, DC);
+                continue;
+            } else if (strstr(currentLine, DATA_STORE_COMMAND)) {
+                strcpy(copyCurrentLine, currentLine);
+                /* reaching .data declaration */
+                for (startParamsIdx = 0; currentLine[startParamsIdx] != '.'; startParamsIdx++);
+                /* skip data word and spaces after */
+                for (startParamsIdx = startParamsIdx + 1; isalpha(currentLine[startParamsIdx])
+                || isspace(currentLine[startParamsIdx]); startParamsIdx++);
+                encode_data_command(writeFile, &copyCurrentLine[startParamsIdx], 1, lineNum, encodedString, DC);
+                continue;
+            }
+
             for (i = 0; !isspace(currentLine[i]); i++) {
                 operationString[i] = currentLine[i];
             }
@@ -218,7 +238,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
         /* .data or .string */
         if (currentLine[i] == '.') {
             /* setting storeDataString */
-            for (startParamsIdx = i; currentLine[startParamsIdx] != ' '; startParamsIdx++) {
+            for (startParamsIdx = i; !isspace(currentLine[startParamsIdx]); startParamsIdx++) {
                 storeDataString[startParamsIdx-i] = currentLine[startParamsIdx];
             }
             storeDataString[startParamsIdx-i] = '\0';
@@ -237,29 +257,15 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                 }
             }
 
-            startParamsIdx++; /* skip space */
+            for (startParamsIdx = startParamsIdx + 1; isspace(currentLine[startParamsIdx]); startParamsIdx++); /* skip spaces */
+
             /* .data declaration */
             if (strcmp(storeDataString, DATA_STORE_COMMAND) == 0) {
-                token = strtok(&copyCurrentLine[startParamsIdx], ", \n");
-                while (token != NULL) {
-                    encodedWord = (short) atoi(token);
-                    write_to_ob_file(encodedWord, encodedString, lineNum, writeFile);
-                    (*DC)++;
-                    token = strtok(NULL, ", \n");
-                }
+                encode_data_command(writeFile, &copyCurrentLine[startParamsIdx], 1, lineNum, encodedString, DC);
                 /* .string declaration */
             } else if (strcmp(storeDataString, STRING_STORE_COMMAND) == 0) {
-                startParamsIdx++;
-                /* skipping space between .string and '"' and counting characters until '"' */
-                for (j = startParamsIdx; currentLine[j] != '"'; j++) {
-                    encodedWord = (short) currentLine[j];
-                    write_to_ob_file(encodedWord, encodedString, lineNum, writeFile);
-                    (*DC)++;
-                }
-                convert_to_special_binary(0, encodedString);
-                /* writing \0 value at the end */
-                fprintf(writeFile, "%d\t%s\n", lineNum, encodedString);
-                (*DC)++;
+                startParamsIdx++; /* skipping the \" at the beginning */
+                encode_data_command(writeFile, &copyCurrentLine[startParamsIdx], 0, lineNum, encodedString, DC);
             }
 
             if (maxLabelLength != -1) memset(labelName, 0, maxLabelLength);
@@ -781,6 +787,38 @@ int encode_regular_command(FILE *writeFile, short operationEncode, char *line, i
     }
 
     return 1;
+}
+
+void encode_data_command(FILE *writeFile, char *line, int isData, int lineNum, char encodedString[], int *DC) {
+    char *token;
+    short encodedWord = 0;
+    int j;
+
+    /* it's a .data declaration */
+    if (isData) {
+        token = strtok(line, ", \n");
+        while (token != NULL) {
+            encodedWord = (short) atoi(token);
+            write_to_ob_file(encodedWord, encodedString, lineNum, writeFile);
+            (*DC)++;
+            token = strtok(NULL, ", \n");
+        }
+        return;
+    }
+
+    /* it's a .string declaration */
+    /* skipping space between .string and '"' and counting characters until '"' */
+    for (j = 0; line[j] != '"'; j++) {
+        encodedWord = (short) line[j];
+        write_to_ob_file(encodedWord, encodedString, lineNum, writeFile);
+        (*DC)++;
+    }
+
+    /* writing \0 value at the end */
+    write_to_ob_file(0, encodedString, lineNum, writeFile);
+    /*convert_to_special_binary(0, encodedString);
+    fprintf(writeFile, "%d\t%s\n", lineNum, encodedString);*/
+    (*DC)++;
 }
 
 void convert_to_special_binary(int num, char finalString[]) {
