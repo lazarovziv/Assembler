@@ -53,7 +53,8 @@ int validLine(char *line){
     int foundLabel = 0;
     while(isspace(line[i])) i++;
     copyFromHere = i;
-    while(isalpha(line[i]) || isdigit(line[i])) i++;
+    while((isalpha(line[i]) || isdigit(line[i]))) i++;
+
 
     if(line[i] == ':'){
         temp = (char*)malloc(sizeof(char*) * i + 1);
@@ -63,6 +64,7 @@ int validLine(char *line){
             i += 1;
             foundLabel = 1;
         }
+        else return 0; /* invalid label decleration */
     }
     if(!foundLabel)
         i = 0;
@@ -75,18 +77,22 @@ int validLine(char *line){
     while (token != NULL) {
         for(i = 0;i < sizeof(operationss) / sizeof(char*); i++) {
             if (strcmp(token, operationss[i]) == 0) {
+                free(copyLine);
                 return sendToOp(line,i,index);
             }
         }
 
         for(i = 0;i < sizeof(instruction_sentencee) / sizeof(char*); i++){
-            if(strcmp(token, instruction_sentencee[i]) == 0)
+            if(strcmp(token, instruction_sentencee[i]) == 0) {
+                free(copyLine);
                 return sendToInstruction(line, i, index);
+            }
         }
 
         token = strtok(NULL, delimiter);
     }
-
+    /* TODO: error if token was invalid */
+    errors(21);
     free(copyLine);
     return 0;
 }

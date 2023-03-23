@@ -1,6 +1,16 @@
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
 #include "input_validation.h"
+#include "constants.h"
+#include "functions.h"
+#include "errors.h"
 
 
+
+
+
+enum status {COMMA,NUMBER,DONE};
 int firstGroupOps(int operation, char *line) {
     int i = 0;
     int wordSize = 0;
@@ -87,12 +97,8 @@ int secondGroupOps(char *line, int operation) {
                 return 0;
             break;
         case PRN_CODE:
-            if (immediateAddressing(argument) || validRegisterOrLabel(argument)  )
-                return 2;
-            if (line[i] == '\0') {
-                errors(20);
+            if (!immediateAddressing(argument) && !validRegisterOrLabel(argument)  )
                 return 0;
-            }
             break;
         case JMP_CODE:
         case BNE_CODE:
@@ -100,11 +106,6 @@ int secondGroupOps(char *line, int operation) {
 /* if any its without parenthesis like bne END */
             if(isLabel(argument,0) && terminatedCorrectly(line,i))
                 return 2;
-
-            if (line[i] == '\0') {
-                errors(20);
-                return 0;
-            }
 
             if(line[i] != '('){
                 errors(19);
@@ -212,7 +213,7 @@ int groupOneSecondArg(char *word, int operation) {
     } else if (strlen(word) == 0) {
         /* TODO: missing parameter */
         return 0;
-    } else if (operation == CMP_CODE && word[(int) firstCharacter] == '#' && immediateAddressing(word)) {
+    } else if (operation == CMP_CODE && word[firstCharacter] == '#' && immediateAddressing(word)) {
 
         /* TODO: error invalid number */
         return 0;
@@ -250,11 +251,6 @@ int validData(char *line){
     state = NUMBER;
     /* skip whitespaces */
     while(isspace(line[i])) i++;
-
-    if (line[i] == '\0') {
-        errors(9);
-        return 0;
-    }
 
     while(line[i] != '\0'){
         switch(state){
@@ -302,11 +298,6 @@ int validString(char *line){
     int finalChar = strlen(line) - 1;
     /*skip whitespaces */
     while(isspace(line[i])) i++;
-
-    if (line[i] == '\0') {
-        errors(11);
-        return 0;
-    }
 
     if(line[i] != '"' || line[finalChar] != '"')
         return 0;
