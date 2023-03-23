@@ -29,7 +29,10 @@ int firstGroupOps(int operation, char *line) {
     wordSize = i - copyFromMem;
     firstParameter = (char *) malloc(sizeof(char *) * wordSize);
     copyWord(&line[copyFromMem], firstParameter, wordSize);
-
+    if(line[i] == '\0'){
+        errors(20);
+        return 0;
+    }
     if(line[i] != ','){
         /* TODO: error missing comma */
         errors(7);
@@ -40,6 +43,11 @@ int firstGroupOps(int operation, char *line) {
     i++; /* skip first comma */
     while (isspace(line[i]) && line[i] != '\0') i++;
     copyFromMem = i; /* start copying the second word */
+
+    if(line[i] == '\0'){
+        errors(20);
+        return 0;
+    }
     while (isalpha(line[i]) || isdigit(line[i])) {
         i++;
     }
@@ -181,12 +189,14 @@ int groupOneFirstArg(char *word, int operation) {
 
 
     if (operation >= MOV_CODE && operation <= SUB_CODE) {
-        if(firstCharacter != '#' && !isalpha(firstCharacter))
-            return 0;
-        if (firstCharacter == '#' && immediateAddressing(word) == 0) {
-            /* TODO: error invalid number */
-            return 0;
-        } else if (isalpha(firstCharacter) && !isLabel(word,0) && !isRegister(word)) {
+//        if(firstCharacter != '#' && !isalpha(firstCharacter))
+//            return 0;
+        if (firstCharacter == '#') {
+            if( immediateAddressing(word) == 0) {
+                /* TODO: error invalid number */
+                return 0;
+            }
+        } else if (!isLabel(word,0) && !isRegister(word)) {
             /* not a label and not a register */
             return 0;
         }
