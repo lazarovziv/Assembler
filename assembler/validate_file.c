@@ -1,13 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include "input_validation.h"
-#include "constants.h"
-#include <stdlib.h>
-#include "functions.h"
 #include "validate_file.h"
-#include "errors.h"
-#define MAX_LINE_SIZE 80
 
 int validFile(char *fileToOpen);
 int validLine(char *line);

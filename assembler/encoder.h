@@ -11,6 +11,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
 int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *table, hashTableInt *entriesTable, hashTableInt *externsTable, int *IC);
 
 int encode_regular_command(FILE *writeFile, short operationEncode, char *line, int lineNum, char encodedString[]);
+void encode_data_command(FILE *writeFile, char *line, int isData, int lineNum, char encodedString[], int *DC);
 
 int command_code(char *command);
 int is_register(char *string);
