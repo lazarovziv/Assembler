@@ -1,13 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include "input_validation.h"
-#include "constants.h"
-#include <stdlib.h>
-#include "functions.h"
 #include "validate_file.h"
-#include "errors.h"
-#define MAX_LINE_SIZE 80
 
 int validFile(char *fileToOpen);
 int validLine(char *line);
@@ -72,6 +63,7 @@ int validLine(char *line){
     copyWord(&line[i],copyLine,strlen(line));
     token = strtok(copyLine, delimiter);
 
+//    while(isspace(line[index]) && line[index] != '\0') index++;
     index = i + 1;
     while (token != NULL) {
         for(i = 0;i < sizeof(operationss) / sizeof(char*); i++) {
@@ -118,6 +110,13 @@ int sendToInstruction(char *line, int instruction, int copyFrom){
     /* skip the operation word */
     while(isspace(line[index]) && line[index] != '\0') index++;
     while((isalpha(line[index]) && line[index] != '\0') || line[index] == '.') index++;
+
+    while(isspace(line[index])) index++;
+
+    if(line[index] == '\0'){
+        errors(20);
+        return 0;
+    }
 
     if(instruction == 0)
         return validData(&line[index]);

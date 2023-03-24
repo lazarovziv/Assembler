@@ -1,10 +1,4 @@
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include "input_validation.h"
-#include "constants.h"
-#include "functions.h"
-#include "errors.h"
 
 
 

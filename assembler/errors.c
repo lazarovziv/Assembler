@@ -1,5 +1,4 @@
-#include <stdio.h>
-#define READY_TO_PRINT -1
+#include "errors.h"
 
 void errors(int error) {
 
