@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
             /* TODO: free all pointers */
             fclose(postDeployReadFiles[i]);
             fclose(preScanFiles[i]);
-            remove(postDeployFileNames[i]);
+            /*remove(postDeployFileNames[i]);*/
             remove(preScanFileNames[i]);
 
             free(labelsTables[i]);
@@ -162,12 +162,12 @@ int main(int argc, char *argv[]) {
         if (!second_scan(preScanFileNames[i], preScanFiles[i], finalFiles[i], labelsTables[i],
                          entriesTables[i], externsTables[i], &IC)) {
             remove(finalFileNames[i]);
-            remove(postDeployFileNames[i]);
+            /*remove(postDeployFileNames[i]);*/
             return 0;
         }
 
         /* remove .am file */
-        remove(postDeployFileNames[i]);
+        /*remove(postDeployFileNames[i]);*/
         lastFileIndex++;
     }
 
