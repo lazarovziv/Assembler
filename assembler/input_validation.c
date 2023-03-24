@@ -1,10 +1,5 @@
 #include "input_validation.h"
 
-
-
-
-
-enum status {COMMA,NUMBER,DONE};
 int firstGroupOps(int operation, char *line) {
     int i = 0;
     int wordSize = 0;
@@ -107,12 +102,16 @@ int secondGroupOps(char *line, int operation) {
         case INC_CODE:
         case CLR_CODE:
         case RED_CODE:
-            if (!validRegisterOrLabel(argument))
+            if (!validRegisterOrLabel(argument)) {
+                free(argument);
                 return 0;
+            }
             break;
         case PRN_CODE:
-            if (!immediateAddressing(argument) && !validRegisterOrLabel(argument)  )
+            if (!immediateAddressing(argument) && !validRegisterOrLabel(argument)  ) {
+                free(argument);
                 return 0;
+            }
             break;
         case JMP_CODE:
         case BNE_CODE:
@@ -127,6 +126,7 @@ int secondGroupOps(char *line, int operation) {
             }
             /* must jump into a label */
             if (!isLabel(argument,0)) {
+                free(argument);
                 return 0;
             }
             i++; /* skip the '(' */
@@ -195,8 +195,6 @@ int groupOneFirstArg(char *word, int operation) {
 
 
     if (operation >= MOV_CODE && operation <= SUB_CODE) {
-//        if(firstCharacter != '#' && !isalpha(firstCharacter))
-//            return 0;
         if (firstCharacter == '#') {
             if( immediateAddressing(word) == 0) {
                 /* TODO: error invalid number */
@@ -229,7 +227,7 @@ int groupOneSecondArg(char *word, int operation) {
     } else if (strlen(word) == 0) {
         /* TODO: missing parameter */
         return 0;
-    } else if (operation == CMP_CODE && word[firstCharacter] == '#' && immediateAddressing(word)) {
+    } else if (operation == CMP_CODE && word[(int) firstCharacter] == '#' && immediateAddressing(word)) {
 
         /* TODO: error invalid number */
         return 0;
@@ -245,6 +243,8 @@ int groupOneSecondArg(char *word, int operation) {
 int validRegisterOrLabel(char *line) {
     if (strlen(line) == 0) {
         /* missing parameter */
+        errors(20);
+        return 0;
     } else if (!isLabel(line,0) && !isRegister(line)) {
         return 0;
     }

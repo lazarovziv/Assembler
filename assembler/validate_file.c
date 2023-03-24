@@ -11,10 +11,10 @@ char *operationss[] = {"mov", "cmp", "add", "sub", "lea",
 char *instruction_sentencee[] = {".data", ".string", ".entry", ".extern"};
 
 int validFile(char *fileToOpen){
+    int lineNumber = 1;
     FILE *file;
     char currentLine[MAX_LINE_SIZE];
     file = fopen(fileToOpen,"r");
-    int lineNumber = 1;
     if(file == NULL){
         printf("Error opening my file\n");
         return 0;
@@ -63,7 +63,6 @@ int validLine(char *line){
     copyWord(&line[i],copyLine,strlen(line));
     token = strtok(copyLine, delimiter);
 
-//    while(isspace(line[index]) && line[index] != '\0') index++;
     index = i + 1;
     while (token != NULL) {
         for(i = 0;i < sizeof(operationss) / sizeof(char*); i++) {

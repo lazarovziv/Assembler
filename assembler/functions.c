@@ -55,7 +55,7 @@ int isLabel(char *line,int firstWordInLine) {
     int labelDefinition = 0;
     char firstChar = line[0];
     char *firstWord;
-    char lastChar = line[strlen(line) - 1];
+
     firstWord = (char*)malloc(sizeof (char*) * strlen(line));
 
     if(strlen(line) > 30){
