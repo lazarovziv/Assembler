@@ -46,6 +46,7 @@ int firstGroupOps(int operation, char *line) {
 
     if(line[i] == '\0'){
         errors(20);
+        free(firstParameter);
         return 0;
     }
     while (isalpha(line[i]) || isdigit(line[i])) {
@@ -58,12 +59,23 @@ int firstGroupOps(int operation, char *line) {
 
     if (groupOneFirstArg(firstParameter, operation) == 0) {
         /* TODO: error */
+        free(firstParameter);
+        free(secondParameter);
         return 0;
     }
 
 
-    if (!groupOneSecondArg(secondParameter, operation) || !terminatedCorrectly(line, i)) {
+    if (!groupOneSecondArg(secondParameter, operation)) {
         /* TODO: error */
+        free(firstParameter);
+        free(secondParameter);
+        return 0;
+    }
+
+    if(!terminatedCorrectly(line, i)){
+        errors(4);
+        free(firstParameter);
+        free(secondParameter);
         return 0;
     }
 
@@ -316,8 +328,12 @@ int validString(char *line){
 
 int validEntryOrExtern(char *line){
     int i = 0;
+    int copyFrom = 0;
+
     /*skip whitespaces */
     while(isspace(line[i])) i++;
+    copyFrom = i;
+
     if(line[i] == '\0'){
         errors(20);
         return 0;
@@ -327,6 +343,14 @@ int validEntryOrExtern(char *line){
         errors(22);
         return 0;
     }
-    return isLabel(&line[i],0);
+
+    while(isalpha(line[i]) || isdigit(line[i])) i++;
+    while(isspace(line[i])) i++;
+
+    if(line[i] != '\0'){
+        errors(4);
+        return 0;
+    }
+    return isLabel(&line[copyFrom],0);
 }
 
