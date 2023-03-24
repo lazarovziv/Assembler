@@ -1,5 +1,10 @@
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdio.h>
 #include "functions.h"
-
+#include "errors.h"
+#define REGISTER_WORD_LEN 2
 char *registers[] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
 char *operations[] = {"mov", "cmp", "add", "sub", "lea",
                       "not", "clr", "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
@@ -59,6 +64,10 @@ int isLabel(char *line,int firstWordInLine) {
     char lastChar = line[strlen(line) - 1];
     firstWord = (char*)malloc(sizeof (char*) * strlen(line));
 
+    if(strlen(line) > 30){
+        errors(2);
+        return 0;
+    }
     /* if-else in order to check if its a definition of a label or a parameter */
     if(firstWordInLine) {
         while(isdigit(line[i]) || isalpha(line[i])) i++;

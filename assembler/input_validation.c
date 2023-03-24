@@ -318,7 +318,15 @@ int validEntryOrExtern(char *line){
     int i = 0;
     /*skip whitespaces */
     while(isspace(line[i])) i++;
+    if(line[i] == '\0'){
+        errors(20);
+        return 0;
+    }
 
+    if(isRegister(&line[i])){
+        errors(22);
+        return 0;
+    }
     return isLabel(&line[i],0);
 }
 

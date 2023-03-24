@@ -70,5 +70,8 @@ void errors(int error) {
         case 21:
             fprintf(stderr,"Unexpected text\n");
             break;
+        case 22:
+            fprintf(stderr,"Invalid label for instruction\n");
+            break;
     }
 }
