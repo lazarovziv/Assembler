@@ -131,7 +131,7 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
 
             cutCurrentLine[i] = '\n';
             strcat(macroBody, cutCurrentLine);
-            macroBody[strlen(macroBody)] = '\n';
+            macroBody[strlen(macroBody)] = '\0';
             currentMacroLength += strlen(cutCurrentLine);
         }
 
