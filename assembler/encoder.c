@@ -426,6 +426,8 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
 
     /* writing IC and DC to top of file */
     fprintf(writeFile, "\t\t%d\t%d\n", *IC, *DC);
+    *IC = 0;
+    *DC = 0;
 
     while (fgets(currentLine, MAX_WORD_LENGTH, readFile) != NULL) {
         L++;
