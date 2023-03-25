@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
             /* TODO: free all pointers */
             fclose(postDeployReadFiles[i]);
             fclose(preScanFiles[i]);
-            /*remove(postDeployFileNames[i]);*/
+            remove(postDeployFileNames[i]);
             remove(preScanFileNames[i]);
 
             free(labelsTables[i]);
@@ -160,16 +160,48 @@ int main(int argc, char *argv[]) {
         }
 
         if (!second_scan(preScanFileNames[i], preScanFiles[i], finalFiles[i], labelsTables[i],
-                         entriesTables[i], externsTables[i], &IC)) {
+                         entriesTables[i], externsTables[i], &IC, &DC)) {
             remove(finalFileNames[i]);
-            /*remove(postDeployFileNames[i]);*/
+            remove(postDeployFileNames[i]);
             return 0;
         }
 
         /* remove .am file */
-        /*remove(postDeployFileNames[i]);*/
+        remove(postDeployFileNames[i]);
         lastFileIndex++;
+
+        /* close all files */
+        fclose(preScanFiles[i]);
+        fclose(postDeployReadFiles[i]);
+        fclose(readFiles[i]);
+        fclose(writeFiles[i]);
+        fclose(finalFiles[i]);
+        /* free all tables */
+        free(macrosTables[i]);
+        free(labelsTables[i]);
+        /* free file names */
+        free(preDeployFileNames[i]);
+        free(postDeployFileNames[i]);
+        free(preScanFileNames[i]);
+        free(finalFileNames[i]);
     }
 
-    return 1;
+    /* free file arrays */
+    free(readFiles);
+    free(writeFiles);
+    free(postDeployReadFiles);
+    free(preScanFiles);
+    free(finalFiles);
+    /* free table arrays */
+    free(macrosTables);
+    free(labelsTables);
+    free(entriesTables);
+    free(externsTables);
+    /* free file names arrays */
+    free(preDeployFileNames);
+    free(postDeployFileNames);
+    free(preScanFileNames);
+    free(finalFileNames);
+
+    return 0;
 }
