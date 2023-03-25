@@ -26,7 +26,7 @@ int init_hash_table(hashTable *table, int size) {
     if (!table) return 0;
     table->items = (hashTableItem **) calloc(size, sizeof(hashTableItem *));
 
-    if (table->items == NULL) return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+    if (table->items == NULL) return 0;
     table->size = size;
     /* if memory allocated successfully */
     return 1;
