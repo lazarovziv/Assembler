@@ -345,7 +345,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
     return continueToSecondScan;
 }
 
-int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *table, hashTableInt *entriesTable, hashTableInt *externsTable, int *IC) {
+int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *table, hashTableInt *entriesTable, hashTableInt *externsTable, int *IC, int *DC) {
     int i;
     int L = 100-1;
     int areEntries = 0, areExterns = 0;
@@ -359,7 +359,6 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
     const char entryFilePostfix[] = ".ent";
     const char externFilePostfix[] = ".ext";
 
-    *IC = 0;
     fileNameLength = strlen(fileName);
 
     /* checking if any entries exist */
@@ -425,6 +424,9 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
         }
     }
 
+    /* writing IC and DC to top of file */
+    fprintf(writeFile, "\t\t%d\t%d\n", *IC, *DC);
+
     while (fgets(currentLine, MAX_WORD_LENGTH, readFile) != NULL) {
         L++;
         currentLine[strlen(currentLine)-1] = '\0';
@@ -446,8 +448,8 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
             if (contains_key_int(entriesTable, &currentLine[i])) {
                 labelEncode = get_value_int(entriesTable, &currentLine[i]);
                 write_to_ob_file((labelEncode << SHIFTS_FOR_DEST) | R, encodedString, L, writeFile);
-                /* writing to entry file (with the row it was declared) */
-                if (areEntries) fprintf(entriesFile, "%s\t%d\n", &currentLine[i], labelEncode);
+                /* writing to entry file (with the row it was declared - labelEncode) */
+                if (areEntries) fprintf(entriesFile, "%s\t%d\n", &currentLine[i], labelEncode); /* TODO: don't write to file entries used already */
                 /* a regular label */
             } else if (contains_key_int(table, &currentLine[i])) {
                 labelEncode = get_value_int(table, &currentLine[i]);
@@ -666,7 +668,7 @@ int encode_regular_command(FILE *writeFile, short operationEncode, char *line, i
                             secondRegisterIdx = secondRegisterIdx << SHIFTS_FOR_DEST_REGISTER;
                             write_to_ob_file(secondRegisterIdx, encodedString, lineNum, writeFile);
                             secondRegisterIdx = 0;
-                            /* in first_scan setting labels as ? in .ob file (encode them in 2nd scan) */
+                            /* in first_scan setting labels as lines in .ob file (encode them in 2nd scan) */
                         } else if (is_label(token)) {
                             operationEncode = operationEncode | (DIRECT_ENCODE << SHIFTS_FOR_DEST);
                             write_to_ob_file(operationEncode, encodedString, lineNum, writeFile);
