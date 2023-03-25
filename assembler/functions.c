@@ -57,9 +57,14 @@ int isLabel(char *line,int firstWordInLine) {
     char *firstWord;
 
     firstWord = (char*)malloc(sizeof (char*) * strlen(line));
+    if(firstWord == NULL){
+        errors(23);
+        return 0;
+    }
 
     if(strlen(line) > 30){
         errors(2);
+        free(firstWord);
         return 0;
     }
     /* if-else in order to check if its a definition of a label or a parameter */
@@ -79,6 +84,7 @@ int isLabel(char *line,int firstWordInLine) {
         if(strcmp(firstWord, operations[i]) == 0 && labelDefinition){
             /* TODO: error label is named as an operation */
             errors(14);
+            free(firstWord);
             return 0;
         }
     }
@@ -88,6 +94,7 @@ int isLabel(char *line,int firstWordInLine) {
         if(strcmp(firstWord, instruction_sentence[i]) == 0 && labelDefinition){
             /* TODO: error label is named as an instruction */
             errors(13);
+            free(firstWord);
             return 0;
         }
     }
@@ -97,6 +104,7 @@ int isLabel(char *line,int firstWordInLine) {
             if(firstWordInLine) {
                 /* TODO: error label defined as a register */
                 errors(15);
+                free(firstWord);
                 return 0;
             }
             else
@@ -107,12 +115,14 @@ int isLabel(char *line,int firstWordInLine) {
     if(!isalpha(firstChar) && firstChar != '.') {
         /* TODO: error first character isnt alphabet */
         errors(0);
+        free(firstWord);
         return 0;
     }
 
     for (i = 0; i < strlen(firstWord) && !isspace(firstWord[i]); i++) {
         if (!isalpha(firstWord[i]) && !isdigit(firstWord[i]) && labelDefinition) {
             errors(17);
+            free(firstWord);
             return 0;
         }
     }
@@ -132,6 +142,7 @@ int isLabel(char *line,int firstWordInLine) {
         if(i == strlen(firstWord)) {
             /* TODO: undefind resgister name */
             errors(16);
+            free(firstWord);
             return 0;
         }
     }
@@ -143,10 +154,17 @@ int isRegister(char *line) {
     char *reg;
     int wordSize = strlen(line);
     reg = (char*)malloc(sizeof(char*) * wordSize);
+
+    if(reg == NULL){
+        errors(23);
+        return 0;
+    }
     copyWord(line,reg,wordSize);
     for(i = 0;i < sizeof(registers) / sizeof(char *);i++){
-        if(strcmp(registers[i],reg) == 0)
+        if(strcmp(registers[i],reg) == 0) {
+            free(reg);
             return 1;
+        }
     }
     free(reg);
     return 0;

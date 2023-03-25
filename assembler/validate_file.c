@@ -49,17 +49,29 @@ int validLine(char *line){
 
     if(line[i] == ':'){
         temp = (char*)malloc(sizeof(char*) * i + 1);
+        if(temp == NULL){
+            errors(23);
+            return 0;
+        }
         copyWord(&line[copyFromHere],temp,i - copyFromHere + 1);
         if(isLabel(temp,firstWordInLine)){
             index += strlen(temp);
             i += 1;
             foundLabel = 1;
         }
-        else return 0; /* invalid label decleration */
+        else {
+            free(temp);
+            return 0;
+        } /* invalid label decleration */
     }
     if(!foundLabel)
         i = 0;
     copyLine = (char*)malloc(sizeof(char*) * strlen(line));
+
+    if(copyLine == NULL){
+        errors(23);
+        return 0;
+    }
     copyWord(&line[i],copyLine,strlen(line));
     token = strtok(copyLine, delimiter);
 

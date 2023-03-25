@@ -17,14 +17,21 @@ int firstGroupOps(int operation, char *line) {
     while (line[i] != ',' && line[i] != '\0') i++;
     wordSize = i - copyFromMem;
     firstParameter = (char *) malloc(sizeof(char *) * wordSize);
+
+    if(firstParameter == NULL){
+        errors(23);
+        return 0;
+    }
     copyWord(&line[copyFromMem], firstParameter, wordSize);
     if(line[i] == '\0'){
         errors(20);
+        free(firstParameter);
         return 0;
     }
     if(line[i] != ','){
         /* TODO: error missing comma */
         errors(7);
+        free(firstParameter);
         return 0;
     }
 
@@ -43,6 +50,11 @@ int firstGroupOps(int operation, char *line) {
     }
     wordSize = i - copyFromMem;
     secondParameter = (char *) malloc(sizeof(char *) * wordSize);
+
+    if(secondParameter == NULL){
+        errors(23);
+        return 0;
+    }
     copyWord(&line[copyFromMem], secondParameter, wordSize);
 
 
@@ -94,6 +106,11 @@ int secondGroupOps(char *line, int operation) {
     while ((isalpha(line[i]) || isdigit(line[i])) || line[i] == '#' || line[i] == '+' || line[i] == '-') i++;
     wordSize = i - copyFromMem;
     argument = (char *) malloc(sizeof(char *) * wordSize);
+
+    if(argument == NULL){
+        errors(23);
+        return 0;
+    }
     copyWord(&line[copyFromMem], argument, wordSize);
 
     switch (operation) {
@@ -137,6 +154,11 @@ int secondGroupOps(char *line, int operation) {
             while(isalpha(line[i]) || isdigit(line[i]) || line[i] == '-' || line[i] == '+') i++;
             wordSize = i - copyFromMem;
             firstParam = (char *) malloc(sizeof(char *) * wordSize);
+
+            if(firstParam == NULL){
+                errors(23);
+                return 0;
+            }
             copyWord(&line[copyFromMem], firstParam, wordSize);
 
             i++;
@@ -146,22 +168,41 @@ int secondGroupOps(char *line, int operation) {
             }
             wordSize = i - copyFromMem;
             secondParam = (char *) malloc(sizeof(char *) * wordSize);
+
+            if(secondParam == NULL){
+                errors(23);
+                return 0;
+            }
             copyWord(&line[copyFromMem], secondParam, wordSize);
 
             if(firstParam[0] == '#') {
-                if (!immediateAddressing(firstParam))
+                if (!immediateAddressing(firstParam)) {
+                    free(firstParam);
+                    free(secondParam);
                     return 0;
+                }
             }
-            else if(!isRegister(firstParam) && !isLabel(firstParam,0))
+            else if(!isRegister(firstParam) && !isLabel(firstParam,0)) {
+                free(firstParam);
+                free(secondParam);
                 return 0;
+            }
             if(secondParam[0] == '#') {
-                if (!immediateAddressing(secondParam))
+                if (!immediateAddressing(secondParam)) {
+                    free(firstParam);
+                    free(secondParam);
                     return 0;
+                }
             }
-            else if(!isRegister(secondParam) && !isLabel(secondParam,0))
+            else if(!isRegister(secondParam) && !isLabel(secondParam,0)) {
+                free(firstParam);
+                free(secondParam);
                 return 0;
+            }
 
             if(line[i] != ')') {
+                free(firstParam);
+                free(secondParam);
                 errors(18);
                 return 0;
             }
@@ -182,6 +223,8 @@ int secondGroupOps(char *line, int operation) {
     if(!terminatedCorrectly(line, i)) {
         /* TODO: error */
         errors(4);
+        free(firstParam);
+        free(secondParam);
         return 0;
     }
     free(argument);
@@ -276,16 +319,23 @@ int validData(char *line){
                 while(!isspace(line[i]) && line[i] != ',' && line[i] != '\0') i++;
                 numOfDigits = i - copyFromHere;
                 currentNum = (char*)malloc(sizeof(char*) * numOfDigits);
+                if(currentNum == NULL){
+                    errors(23);
+                    return 0;
+                }
                 copyWord(&line[copyFromHere],currentNum,numOfDigits);
                 /* invalid number input */
                 if(validNumber(currentNum) == 0){
+                    free(currentNum);
                     return 0;
                 }
 
                 /* continue running until ',' or '\0' */
                 while(isspace(line[i])) i++;
-                if(line[i] != ',' && line[i] != '\0')
+                if(line[i] != ',' && line[i] != '\0') {
+                    free(currentNum);
                     return 0;
+                }
 
                 if(line[i] == '\0')
                     state = DONE;
@@ -296,12 +346,15 @@ int validData(char *line){
             case COMMA:
                 i++;
                 while(isspace(line[i])) i++;
-                if(line[i] != '+' && line[i] != '-' && !isdigit(line[i]))
+                if(line[i] != '+' && line[i] != '-' && !isdigit(line[i])) {
+                    free(currentNum);
                     return 0;
+                }
                 state = NUMBER;
                 break;
 
             case DONE:
+                free(currentNum);
                 return 1;
         }
     }

@@ -4,7 +4,7 @@
 enum status {COMMA,NUMBER,DONE};
 
 
-/* maybe change the return value of groupOneFirstArg to the number of addressing code */
+/* checks the validation of first group operations */
 int groupOneFirstArg(char *word,int operation);
 int groupOneSecondArg(char *word, int operation);
 int firstGroupOps(int operation, char *line);

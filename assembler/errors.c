@@ -72,5 +72,8 @@ void errors(int error) {
         case 22:
             fprintf(stderr,"Invalid label for instruction\n");
             break;
+        case 23:
+            fprintf(stderr,"Could'nt allocate memory\n");
+            break;
     }
 }
