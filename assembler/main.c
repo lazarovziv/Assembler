@@ -169,7 +169,44 @@ int main(int argc, char *argv[]) {
         /* remove .am file */
         remove(postDeployFileNames[i]);
         lastFileIndex++;
+
+        /* close all files */
+        if (readFiles[i] != NULL) {
+            free(readFiles[i]);
+        }
+        if (postDeployReadFiles[i] != NULL) {
+            fclose(postDeployReadFiles[i]);
+        }
+        if (preScanFiles[i] != NULL) {
+            fclose(preScanFiles[i]);
+        }
+        if (finalFiles[i] != NULL) {
+            fclose(finalFiles[i]);
+        }
+        /* free all tables */
+        free(macrosTables[i]);
+        free(labelsTables[i]);
+        /* free file names */
+        free(preDeployFileNames[i]);
+        free(postDeployFileNames[i]);
+        free(preScanFileNames[i]);
+        free(finalFileNames[i]);
     }
+
+    /* free file arrays */
+    free(readFiles);
+    free(postDeployReadFiles);
+    free(finalFiles);
+    /* free table arrays */
+    free(macrosTables);
+    free(labelsTables);
+    free(entriesTables);
+    free(externsTables);
+    /* free file names arrays */
+    free(preDeployFileNames);
+    free(postDeployFileNames);
+    free(preScanFileNames);
+    free(finalFileNames);
 
     return 0;
 }
