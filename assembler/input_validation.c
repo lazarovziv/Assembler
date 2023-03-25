@@ -223,8 +223,6 @@ int secondGroupOps(char *line, int operation) {
     if(!terminatedCorrectly(line, i)) {
         /* TODO: error */
         errors(4);
-        free(firstParam);
-        free(secondParam);
         return 0;
     }
     free(argument);
@@ -347,6 +345,7 @@ int validData(char *line){
                 i++;
                 while(isspace(line[i])) i++;
                 if(line[i] != '+' && line[i] != '-' && !isdigit(line[i])) {
+                    errors(10);
                     free(currentNum);
                     return 0;
                 }

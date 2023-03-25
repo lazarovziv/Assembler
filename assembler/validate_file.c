@@ -4,8 +4,8 @@ int validFile(char *fileToOpen);
 int validLine(char *line);
 
 
-char *operationss[] = {"mov", "cmp", "add", "sub", "lea",
-                       "not", "clr", "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
+char *operationss[] = {"mov", "cmp", "add", "sub", "not",
+                       "clr", "lea", "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
                        "rts", "stop"};
 
 char *instruction_sentencee[] = {".data", ".string", ".entry", ".extern"};

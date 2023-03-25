@@ -52,7 +52,12 @@ int read_macros_from_file(FILE* file, hashTable *table, int *longestMacroBody) {
         if (start >= end) continue;
         for (i = start; i <= end; i++) cutCurrentLine[i-start] = currentLine[i];
 
-        if (strcmp(currentLine, "\n") == 0) continue;
+        if (strcmp(currentLine, "\n") == 0) {
+            memset(currentLine, 0, MAX_WORD_LENGTH);
+            memset(tempLine, 0, MAX_WORD_LENGTH);
+            memset(cutCurrentLine, 0, MAX_WORD_LENGTH);
+            continue;
+        }
 
         if (macroStatus == NOT_IN_MACRO) {
             strcpy(tempLine, currentLine);
@@ -170,7 +175,7 @@ int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
 
         while (isspace(word[k])) k--;
 
-        for (cutIdx = j; cutIdx < k; cutIdx++) cutWord[cutIdx-j] = word[cutIdx];
+        for (cutIdx = j; cutIdx < k+1; cutIdx++) cutWord[cutIdx-j] = word[cutIdx];
 
         /* encountered a comment */
         if (strstr(cutWord, ";")) {
@@ -185,7 +190,7 @@ int write_macros_to_file(FILE *readFile, FILE *writeFile, hashTable *table) {
         /* if finished with macro deployment OR haven't found one yet */
         if (macroStatus == NOT_IN_MACRO) {
             /* getting rid of \n character */
-            cutWord[strlen(cutWord)-1] = '\0';
+            if (cutWord[strlen(cutWord)-1] == '\n') cutWord[strlen(cutWord)-1] = '\0';
             strcpy(tempWord, cutWord);
 
             token = strtok(tempWord, " \t");

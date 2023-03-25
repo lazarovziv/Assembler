@@ -47,7 +47,8 @@ int terminatedCorrectly(char *line, int index) {
     int i = index;
     while(isspace(line[i]) && line[i] != '\0')
         i++;
-    return line[i] == '\0';
+    if (line[i] == '\0') return 1;
+    return 0;
 }
 
 int isLabel(char *line,int firstWordInLine) {
