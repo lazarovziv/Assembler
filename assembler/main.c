@@ -13,8 +13,6 @@ int main(int argc, char *argv[]) {
     char **inputFileNames;
     int currentFileNameLength;
 
-    int errorFound = 0;
-
     const char filePostfix[] = ".as";
     const char fileWritePostfix[] = ".am";
     const char preScanFilePostfix[] = ".temp_ob";
@@ -113,7 +111,6 @@ int main(int argc, char *argv[]) {
                            macrosTables[i], &longestMacroBodyLength)) {
             IC = 100;
             DC = 0;
-            errorFound = 1;
             continue;
         }
         entriesTables[i] = (hashTableInt *) malloc(sizeof(hashTableInt));
@@ -150,14 +147,13 @@ int main(int argc, char *argv[]) {
                         &IC, &DC, entriesTables[i], externsTables[i])) {
             IC = 100;
             DC = 0;
-            errorFound = 1;
             continue;
         }
 
         fclose(preScanFiles[i]);
 
         if ((finalFiles[i] = fopen(finalFileNames[i], WRITE_MODE)) == NULL) {
-            fprintf(stderr, "Unable to write to file %s\n", finalFileNames[i-1]);
+            fprintf(stderr, "Unable to write to file %s\n", finalFileNames[i]);
             break;
         }
 
@@ -170,7 +166,6 @@ int main(int argc, char *argv[]) {
                          entriesTables[i], externsTables[i], &IC, &DC)) {
             IC = 100;
             DC = 0;
-            errorFound = 1;
             continue;
         }
 
@@ -178,21 +173,6 @@ int main(int argc, char *argv[]) {
 
         printf("Finished processing file %s!\n\n", inputFileNames[i]);
     }
-
-    /* free file arrays */
-    free(readFiles);
-    free(postDeployReadFiles);
-    free(finalFiles);
-    /* free table arrays */
-    free(macrosTables);
-    free(labelsTables);
-    free(entriesTables);
-    free(externsTables);
-    /* free file names arrays */
-    free(preDeployFileNames);
-    free(postDeployFileNames);
-    free(preScanFileNames);
-    free(finalFileNames);
 
     return 0;
 }
