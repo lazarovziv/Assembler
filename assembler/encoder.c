@@ -383,7 +383,6 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
         newEntryFileName = (char *) calloc(fileNameLength + strlen(entryFilePostfix), sizeof(char));
         if (newEntryFileName == NULL) {
             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
-            remove(fileName);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
         for (i = 0; i < fileNameLength; i++) {
@@ -395,7 +394,7 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
         newEntryFileName[i+4] = '\0';
         if ((entriesFile = fopen(newEntryFileName, WRITE_MODE)) == NULL) {
             fprintf(stderr, "Error trying to open file %s\n", newEntryFileName);
-            remove(fileName);
+            remove(newEntryFileName);
             free(newEntryFileName);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
@@ -406,6 +405,7 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
         newExternFileName = (char *) calloc(fileNameLength + strlen(externFilePostfix), sizeof(char));
         if (newExternFileName == NULL) {
             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+            if (areEntries) remove(newEntryFileName);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
         for (i = 0; i < fileNameLength; i++) {
@@ -417,6 +417,8 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
         newExternFileName[i+4] = '\0';
         if ((externsFile = fopen(newExternFileName, WRITE_MODE)) == NULL) {
             fprintf(stderr, "Error trying to open file %s\n", newExternFileName);
+            if (areEntries) remove(newEntryFileName);
+            remove(newExternFileName);
             free(newExternFileName);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
@@ -465,7 +467,7 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
                 /* label wasn't defined at all */
             } else {
                 fprintf(stderr, "%s: %s", &currentLine[i], LABEL_UNDEFINED_ERROR_MESSAGE);
-                remove(newExternFileName);
+                remove(newEntryFileName);
                 remove(newExternFileName);
                 free(newEntryFileName);
                 free(newExternFileName);

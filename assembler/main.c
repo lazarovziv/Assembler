@@ -46,7 +46,6 @@ int main(int argc, char *argv[]) {
         currentFileNameLength = strlen(argv[i+1]);
         inputFileNames[i] = calloc(currentFileNameLength, sizeof(char));
         strcpy(inputFileNames[i], argv[i+1]);
-        printf("file name %d: %s\n", i, inputFileNames[i]);
 
         preDeployFileNames[i] = (char *) calloc(currentFileNameLength + strlen(filePostfix), sizeof(char)); /* adding 4 for .as postfix */
         postDeployFileNames[i] = (char *) calloc(currentFileNameLength + strlen(fileWritePostfix), sizeof(char)); /* adding 4 as adding .am postfix */
@@ -111,8 +110,12 @@ int main(int argc, char *argv[]) {
                            macrosTables[i], &longestMacroBodyLength)) {
             IC = 100;
             DC = 0;
+            /* remove .am file */
+            fclose(writeFiles[i]);
+            remove(postDeployFileNames[i]);
             continue;
         }
+
         entriesTables[i] = (hashTableInt *) malloc(sizeof(hashTableInt));
         externsTables[i] = (hashTableInt *) malloc(sizeof(hashTableInt));
         labelsTables[i] = (hashTableInt *) malloc(sizeof(hashTableInt));
@@ -147,6 +150,13 @@ int main(int argc, char *argv[]) {
                         &IC, &DC, entriesTables[i], externsTables[i])) {
             IC = 100;
             DC = 0;
+
+            /* remove .am, .temp_ob files */
+            fclose(preScanFiles[i]);
+            fclose(postDeployReadFiles[i]);
+            remove(preScanFileNames[i]);
+            remove(postDeployFileNames[i]);
+
             continue;
         }
 
@@ -166,10 +176,22 @@ int main(int argc, char *argv[]) {
                          entriesTables[i], externsTables[i], &IC, &DC)) {
             IC = 100;
             DC = 0;
+
+            /* remove .am, .temp_ob, .ob files */
+            fclose(preScanFiles[i]);
+            fclose(postDeployReadFiles[i]);
+            fclose(finalFiles[i]);
+            remove(preScanFileNames[i]);
+            remove(postDeployFileNames[i]);
+            remove(finalFileNames[i]);
+
             continue;
         }
 
         lastFileIndex++;
+        /* remove .am, .temp_ob */
+        remove(postDeployFileNames[i]);
+        remove(preScanFileNames[i]);
 
         printf("Finished processing file %s!\n\n", inputFileNames[i]);
     }

@@ -1,0 +1,10 @@
+user@ubuntu:/mnt/hgfs/mamanim/maman14/assembler$ ./run x z ps
+Processing file x...
+Finished processing file x!
+
+Processing file z...
+Finished processing file z!
+
+Processing file ps...
+Finished processing file ps!
+
