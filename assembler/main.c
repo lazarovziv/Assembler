@@ -10,7 +10,10 @@ int main(int argc, char *argv[]) {
     int longestMacroBodyLength = -1;
 
     char **preDeployFileNames, **postDeployFileNames, **preScanFileNames, **finalFileNames;
+    char **inputFileNames;
     int currentFileNameLength;
+
+    int errorFound = 0;
 
     const char filePostfix[] = ".as";
     const char fileWritePostfix[] = ".am";
@@ -39,49 +42,53 @@ int main(int argc, char *argv[]) {
     postDeployFileNames = (char **) calloc(numOfFiles, sizeof(char));
     preScanFileNames = (char **) calloc(numOfFiles, sizeof(char));
     finalFileNames = (char **) calloc(numOfFiles, sizeof(char));
+    inputFileNames = (char **) calloc(numOfFiles, sizeof(char));
 
-    /* storing all files in readFiles array */
-    for (i = 1; i < numOfFiles+1; i++) {
-        currentFileNameLength = strlen(argv[i]);
-        preDeployFileNames[i-1] = (char *) calloc(currentFileNameLength + strlen(filePostfix), sizeof(char)); /* adding 4 for .as postfix */
-        postDeployFileNames[i-1] = (char *) calloc(currentFileNameLength + strlen(fileWritePostfix), sizeof(char)); /* adding 4 as adding .am postfix */
-        preScanFileNames[i-1] = (char *) calloc(currentFileNameLength + strlen(preScanFilePostfix), sizeof(char)); /* adding 8 as adding .temp_ob postfix */
-        finalFileNames[i-1] = (char *) calloc(currentFileNameLength + strlen(finalFilePostfix), sizeof(char)); /* adding 4 as adding .ob postfix */
+    for (i = 0; i < numOfFiles; i++) {
+        currentFileNameLength = strlen(argv[i+1]);
+        inputFileNames[i] = calloc(currentFileNameLength, sizeof(char));
+        strcpy(inputFileNames[i], argv[i+1]);
+        printf("file name %d: %s\n", i, inputFileNames[i]);
 
-        if (preDeployFileNames[i-1] == NULL || postDeployFileNames[i-1] == NULL
-            || preScanFileNames[i-1] == NULL || finalFileNames[i-1] == NULL) {
+        preDeployFileNames[i] = (char *) calloc(currentFileNameLength + strlen(filePostfix), sizeof(char)); /* adding 4 for .as postfix */
+        postDeployFileNames[i] = (char *) calloc(currentFileNameLength + strlen(fileWritePostfix), sizeof(char)); /* adding 4 as adding .am postfix */
+        preScanFileNames[i] = (char *) calloc(currentFileNameLength + strlen(preScanFilePostfix), sizeof(char)); /* adding 8 as adding .temp_ob postfix */
+        finalFileNames[i] = (char *) calloc(currentFileNameLength + strlen(finalFilePostfix), sizeof(char)); /* adding 4 as adding .ob postfix */
+
+        if (preDeployFileNames[i] == NULL || postDeployFileNames[i] == NULL
+            || preScanFileNames[i] == NULL || finalFileNames[i] == NULL) {
             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
 
         /* setting every file name */
-        strcpy(preDeployFileNames[i-1], argv[i]);
-        strcpy(postDeployFileNames[i-1], argv[i]);
-        strcpy(preScanFileNames[i-1], argv[i]);
-        strcpy(finalFileNames[i-1], argv[i]);
+        strcpy(preDeployFileNames[i], inputFileNames[i]);
+        strcpy(postDeployFileNames[i], inputFileNames[i]);
+        strcpy(preScanFileNames[i], inputFileNames[i]);
+        strcpy(finalFileNames[i], inputFileNames[i]);
 
         /* adding ".as" postfix */
-        strcat(preDeployFileNames[i-1], filePostfix);
+        strcat(preDeployFileNames[i], filePostfix);
         /* adding ".am" postfix */
-        strcat(postDeployFileNames[i-1], fileWritePostfix);
+        strcat(postDeployFileNames[i], fileWritePostfix);
         /* adding ".temp_ob" postfix */
-        strcat(preScanFileNames[i-1], preScanFilePostfix);
+        strcat(preScanFileNames[i], preScanFilePostfix);
         /* adding ".ob" postfix */
-        strcat(finalFileNames[i-1], finalFilePostfix);
+        strcat(finalFileNames[i], finalFilePostfix);
 
         /* trying to open file to read macros from */
-        if ((readFiles[i-1] = fopen(preDeployFileNames[i-1], READ_MODE)) == NULL) {
-            fprintf(stderr, "Error trying to open file %s\n", preDeployFileNames[i-1]);
-            free(preDeployFileNames[i-1]);
+        if ((readFiles[i] = fopen(preDeployFileNames[i], READ_MODE)) == NULL) {
+            fprintf(stderr, "Error trying to open file %s\n", preDeployFileNames[i]);
+            free(preDeployFileNames[i]);
             /* free all opened files in case one doesn't exist */
             for (j = 0; j < i; j++) fclose(readFiles[j]);
             free(readFiles);
             return MAIN_ERROR_CODE;
         }
         /* trying to open file to write to with all macros */
-        if ((writeFiles[i-1] = fopen(postDeployFileNames[i-1], WRITE_MODE)) == NULL) {
-            fprintf(stderr, "Unable to write to file %s\n", postDeployFileNames[i-1]);
-            free(postDeployFileNames[i-1]);
+        if ((writeFiles[i] = fopen(postDeployFileNames[i], WRITE_MODE)) == NULL) {
+            fprintf(stderr, "Unable to write to file %s\n", postDeployFileNames[i]);
+            free(postDeployFileNames[i]);
             /* free all opened files in case one doesn't exist */
             for (j = 0; j < i; j++) fclose(writeFiles[j]);
             free(writeFiles);
@@ -89,9 +96,9 @@ int main(int argc, char *argv[]) {
         }
 
         /* initializing table in memory for current file */
-        macrosTables[i-1] = (hashTable*) malloc(sizeof(hashTable));
+        macrosTables[i] = (hashTable*) malloc(sizeof(hashTable));
 
-        if (!init_hash_table(macrosTables[i-1], HASH_TABLE_SIZE)) {
+        if (!init_hash_table(macrosTables[i], HASH_TABLE_SIZE)) {
             fprintf(stderr, "Unsuccessful initialization of hash table.\n");
             return MAIN_ERROR_CODE;
         }
@@ -101,11 +108,22 @@ int main(int argc, char *argv[]) {
     externsTables = (hashTableInt **) malloc(sizeof(hashTableInt*));
 
     for (i = 0; i < numOfFiles; i++) {
+        printf("Processing file %s...\n", inputFileNames[i]);
         if (!deploy_macros(readFiles[i], writeFiles[i],
-                           macrosTables[i], &longestMacroBodyLength)) return 0;
+                           macrosTables[i], &longestMacroBodyLength)) {
+            IC = 100;
+            DC = 0;
+            errorFound = 1;
+            continue;
+        }
         entriesTables[i] = (hashTableInt *) malloc(sizeof(hashTableInt));
         externsTables[i] = (hashTableInt *) malloc(sizeof(hashTableInt));
         labelsTables[i] = (hashTableInt *) malloc(sizeof(hashTableInt));
+
+        if (!entriesTables[i] || !externsTables[i] || !labelsTables[i]) {
+            fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
+            return MEMORY_NOT_ALLOCATED_ERROR_CODE;
+        }
 
         if (!init_hash_table_int(entriesTables[i], HASH_TABLE_SIZE) ||
             !init_hash_table_int(externsTables[i], HASH_TABLE_SIZE) ||
@@ -130,17 +148,10 @@ int main(int argc, char *argv[]) {
 
         if (!first_scan(postDeployReadFiles[i], preScanFiles[i], labelsTables[i],
                         &IC, &DC, entriesTables[i], externsTables[i])) {
-            /* TODO: free all pointers */
-            fclose(postDeployReadFiles[i]);
-            fclose(preScanFiles[i]);
-            remove(postDeployFileNames[i]);
-            remove(preScanFileNames[i]);
-
-            free(labelsTables[i]);
-            free(entriesTables[i]);
-            free(externsTables[i]);
-
-            break;
+            IC = 100;
+            DC = 0;
+            errorFound = 1;
+            continue;
         }
 
         fclose(preScanFiles[i]);
@@ -152,45 +163,20 @@ int main(int argc, char *argv[]) {
 
         if ((preScanFiles[i] = fopen(preScanFileNames[i], READ_MODE)) == NULL) {
             fprintf(stderr, "Unable to write to file %s\n", preScanFileNames[i]);
-            free(preScanFileNames[i]);
-            /* free all opened files in case one doesn't exist */
-            for (j = 0; j < i; j++) fclose(preScanFiles[j]);
-            free(preScanFiles);
             break;
         }
 
         if (!second_scan(preScanFileNames[i], preScanFiles[i], finalFiles[i], labelsTables[i],
                          entriesTables[i], externsTables[i], &IC, &DC)) {
-            remove(finalFileNames[i]);
-            remove(postDeployFileNames[i]);
-            return 0;
+            IC = 100;
+            DC = 0;
+            errorFound = 1;
+            continue;
         }
 
-        /* remove .am file */
-        remove(postDeployFileNames[i]);
         lastFileIndex++;
 
-        /* close all files */
-        if (readFiles[i] != NULL) {
-            free(readFiles[i]);
-        }
-        if (postDeployReadFiles[i] != NULL) {
-            fclose(postDeployReadFiles[i]);
-        }
-        if (preScanFiles[i] != NULL) {
-            fclose(preScanFiles[i]);
-        }
-        if (finalFiles[i] != NULL) {
-            fclose(finalFiles[i]);
-        }
-        /* free all tables */
-        free(macrosTables[i]);
-        free(labelsTables[i]);
-        /* free file names */
-        free(preDeployFileNames[i]);
-        free(postDeployFileNames[i]);
-        free(preScanFileNames[i]);
-        free(finalFileNames[i]);
+        printf("Finished processing file %s!\n\n", inputFileNames[i]);
     }
 
     /* free file arrays */

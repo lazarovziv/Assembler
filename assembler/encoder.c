@@ -44,8 +44,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
         currentLabelLength = 0;
 
         if (!L) {
-            /* TODO: print error */
-            printf("in line %d\n\n", lineNum);
+            fprintf(stderr, "in line %d\n\n", lineNum);
             encodeLine = 0;
             continueToSecondScan = 0;
         }
@@ -94,16 +93,14 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                     if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                         fprintf(stderr, "Label %s already exists!\n", labelName);
                         continueToSecondScan = 0;
-                        continue; /* TODO: handle errors if label already exists */
+                        continue;
                     }
                     /* label already declared */
                 } else if (contains_key_int(entriesTable, labelName)) {
-                    /* TODO: print error label declared twice as entry */
                     fprintf(stderr, "%s: %s", labelName, LABEL_DECLARED_ENTRY_ERROR_MESSAGE);
                     continueToSecondScan = 0;
                     continue;
                 } else if (contains_key_int(externsTable, labelName)) {
-                    /* TODO: print error label declared entry and extern */
                     fprintf(stderr, "%s: %s", labelName, LABEL_DECLARED_EXTERN_AND_ENTRY_ERROR_MESSAGE);
                     continueToSecondScan = 0;
                     continue;
@@ -112,7 +109,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                     if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                         fprintf(stderr, "Label %s already exists!\n", labelName);
                         continueToSecondScan = 0;
-                        continue; /* TODO: handle errors if label already exists */
+                        continue;
                     }
                 }
 
@@ -161,7 +158,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                     if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                         fprintf(stderr, "Label %s already exists!\n", labelName);
                         continueToSecondScan = 0;
-                        continue; /* TODO: handle errors if label already exists */
+                        continue;
                     }
                 }
 
@@ -260,7 +257,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                 if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                     fprintf(stderr, "Label %s already exists!\n", labelName);
                     continueToSecondScan = 0;
-                    continue; /* TODO: handle errors if label already exists */
+                    continue;
                 }
             }
 
@@ -291,7 +288,7 @@ int first_scan(FILE *file, FILE *writeFile, hashTableInt *table, int *IC, int *D
                 if (insertLabelReturnCode == HASH_TABLE_INSERT_CONTAINS_KEY_ERROR_CODE) {
                     fprintf(stderr, "Label %s already exists!\n", labelName);
                     continueToSecondScan = 0;
-                    continue; /* TODO: handle errors if label already exists */
+                    continue;
                 }
                 /* already declared */
             } else if (contains_key_int(table, labelName)) {
@@ -409,7 +406,6 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
         newExternFileName = (char *) calloc(fileNameLength + strlen(externFilePostfix), sizeof(char));
         if (newExternFileName == NULL) {
             fprintf(stderr, MEMORY_NOT_ALLOCATED_SUCCESSFULLY_ERROR_MESSAGE);
-            remove(fileName);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
         for (i = 0; i < fileNameLength; i++) {
@@ -421,7 +417,6 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
         newExternFileName[i+4] = '\0';
         if ((externsFile = fopen(newExternFileName, WRITE_MODE)) == NULL) {
             fprintf(stderr, "Error trying to open file %s\n", newExternFileName);
-            remove(fileName);
             free(newExternFileName);
             return MEMORY_NOT_ALLOCATED_ERROR_CODE;
         }
@@ -429,7 +424,7 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
 
     /* writing IC and DC to top of file */
     fprintf(writeFile, "\t\t%d\t%d\n", *IC, *DC);
-    *IC = 0;
+    *IC = 100;
     *DC = 0;
 
     while (fgets(currentLine, MAX_WORD_LENGTH, readFile) != NULL) {
@@ -454,7 +449,7 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
                 labelEncode = get_value_int(entriesTable, &currentLine[i]);
                 write_to_ob_file((labelEncode << SHIFTS_FOR_DEST) | R, encodedString, L, writeFile);
                 /* writing to entry file (with the row it was declared - labelEncode) */
-                if (areEntries) fprintf(entriesFile, "%s\t%d\n", &currentLine[i], labelEncode); /* TODO: don't write to file entries used already */
+                if (areEntries) fprintf(entriesFile, "%s\t%d\n", &currentLine[i], labelEncode);
                 /* a regular label */
             } else if (contains_key_int(table, &currentLine[i])) {
                 labelEncode = get_value_int(table, &currentLine[i]);
@@ -470,9 +465,8 @@ int second_scan(char *fileName, FILE *readFile, FILE *writeFile, hashTableInt *t
                 /* label wasn't defined at all */
             } else {
                 fprintf(stderr, "%s: %s", &currentLine[i], LABEL_UNDEFINED_ERROR_MESSAGE);
-                remove(newEntryFileName);
                 remove(newExternFileName);
-                remove(fileName);
+                remove(newExternFileName);
                 free(newEntryFileName);
                 free(newExternFileName);
                 return 0;
@@ -503,7 +497,6 @@ int encode_regular_command(FILE *writeFile, short operationEncode, char *line, i
     for (j = 0; j < MAX_WORD_LENGTH; j++) labelBeforeParams[j] = '\0';
     j = 0;
 
-    /* TODO: handle addressing encoding in first word */
     switch (operationEncode >> SHIFTS_FOR_OPCODE) {
         case MOV_CODE:
         case CMP_CODE:
